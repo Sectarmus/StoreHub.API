@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StoreHub.API.Data;
 using StoreHub.API.Models;
 using StoreHub.API.DTOs;
+using StoreHub.API.Params;
 
 namespace StoreHub.API.Controllers;
 
@@ -20,19 +21,31 @@ public class ProductsController : ControllerBase
 
     // 1. GET: api/products (Tüm ürünleri listele)
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProducts()
+    public async Task<ActionResult<IEnumerable<ProductResponseDto>>> GetProducts([FromQuery] ProductParams productParams)
     {
-        var products = await _context.Products.ToListAsync();
-
+        // 1. Sorguyu oluştur (Henüz veritabanına gitmedi!)
+        // Deftere Not: IQueryable, sorgunun PostgreSQL tarafına gitmeden önce hazırlandığı halidir.
+        var query = _context.Products.AsQueryable();
+        // 2. Filtreleme (Filtering)
+        if (!string.IsNullOrEmpty(productParams.Search))
+        {
+            // SQL: WHERE Name ILIKE '%search%'
+            query = query.Where(p => p.Name.ToLower().Contains(productParams.Search.ToLower()));
+        }
+        if (productParams.MinPrice.HasValue)
+            query = query.Where(p => p.Price >= productParams.MinPrice.Value);
+        if (productParams.MaxPrice.HasValue)
+            query = query.Where(p => p.Price <= productParams.MaxPrice.Value);
+        // 3. Sayfalama (Pagination)
+        // SQL: OFFSET (PageNumber-1)*PageSize LIMIT PageSize
+        var products = await query
+            .Skip((productParams.PageNumber - 1) * productParams.PageSize)
+            .Take(productParams.PageSize)
+            .ToListAsync();
+        // 4. Mapping (DTO'ya çevir)
         var response = products.Select(p => new ProductResponseDto(
-            p.Id,
-            p.Name,
-            p.Description,
-            p.Price,
-            p.Stock,
-            p.CreatedAt
+            p.Id, p.Name, p.Description, p.Price, p.Stock, p.CreatedAt
         ));
-
         return Ok(response);
     }
 

@@ -1,0 +1,37 @@
+using System.Net;
+using System.Text.Json;
+using StoreHub.API.Errors;
+
+namespace StoreHub.API.Middlewares;
+
+public class ExceptionMiddleware
+{
+    private readonly RequestDelegate _next; // Hattaki bir sonraki bileşene geçmek için
+    private readonly ILogger<ExceptionMiddleware> _logger; // Hatayı terminale yazmak için
+    private readonly IHostEnvironment _env; // Projenin "Development" mı "Production" mı olduğunu anlamak için
+    public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment env)
+    {
+        _next = next;
+        _logger = logger;
+        _env = env;
+    }
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context); // Her şey yolundaysa bir sonraki adıma geç
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, ex.Message); // Hatayı terminale yaz
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; // 500 Hatası
+            var response = _env.IsDevelopment()
+                ? new ApiException(context.Response.StatusCode, ex.Message, ex.StackTrace?.ToString())
+                : new ApiException(context.Response.StatusCode, "Internal Server Error");
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+            var json = JsonSerializer.Serialize(response, options);
+            await context.Response.WriteAsync(json);
+        }
+    }
+}

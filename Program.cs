@@ -1,6 +1,7 @@
 using Scalar.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using StoreHub.API.Data;
+using StoreHub.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

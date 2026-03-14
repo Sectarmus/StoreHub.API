@@ -11,4 +11,6 @@ public class AppDbContext : DbContext
 
     // Bu satır "Ürünlerimi veritabanında bir tablo yap" demektir.
     public DbSet<Product> Products { get; set; }
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Order> Orders { get; set; }
 }

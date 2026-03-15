@@ -81,8 +81,9 @@ public class OrdersController : ControllerBase
                 order.TotalAmount,
                 order.OrderItems.Select(oi => new OrderItemResponseDto(
                     oi.ProductId,
-                    productName: "Ürün", // Optimizasyon için geçici sabit isim
+                    "Ürün", // Optimizasyon için geçici sabit isim
                     oi.Quantity,
+
                     oi.UnitPrice,
                     oi.Quantity * oi.UnitPrice
                 )).ToList()

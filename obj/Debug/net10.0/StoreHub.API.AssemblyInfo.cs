@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("StoreHub.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2bf95e1b38609b2b500aeed57bdbb2dfc2e558c2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+071a44e1009e346ff0781d2457df383ab40398b1")]
 [assembly: System.Reflection.AssemblyProductAttribute("StoreHub.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("StoreHub.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -10,4 +10,8 @@ public class Order
     // Her sipariş mutlaka BİR müşteriye aittir.
     public int CustomerId { get; set; } // Foreign Key (Yabancı Anahtar)
     public Customer Customer { get; set; } = null!; // Navigation Property
+
+    // --- Yeni Eklenen: Bir siparişte birden fazla ürün kalemi olabilir ---
+    public List<OrderItem> OrderItems { get; set; } = new();
 }
+

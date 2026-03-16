@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using StoreHub.API.Data;
 using StoreHub.API.DTOs;
 using StoreHub.API.Models;
+using StoreHub.API.Helpers;
+using StoreHub.API.Params;
 
 namespace StoreHub.API.Controllers;
 
@@ -16,6 +18,54 @@ public class OrdersController : ControllerBase
     {
         _context = context;
     }
+
+    // GET: api/orders (Tüm siparişleri listele - Sayfalamalı ve Optimize edilmiş)
+    [HttpGet]
+    public async Task<ActionResult<PagedResponse<OrderResponseDto>>> GetOrders([FromQuery] PaginationParams paginationParams)
+    {
+        // 1. IQueryable oluştur ve AsNoTracking() EKLE! (İşte hız burada başlıyor)
+        var query = _context.Orders
+            .Include(o => o.Customer)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+            .AsNoTracking() // EF Core'a "sadece oku, takip etme" dedik.
+            .AsQueryable();
+
+        // 2. Toplam Kayıt Sayısı
+        var totalCount = await query.CountAsync();
+
+        // 3. Sayfalama (Skip & Take) ve Veritabanına Vuruş (ToListAsync)
+        // Siparişleri tarihe göre en yeniden eskiye doğru sıralayalım ki en son sipariş en üstte çıksın (Order By Descending)
+        var orders = await query
+            .OrderByDescending(o => o.OrderDate)
+            .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+            .Take(paginationParams.PageSize)
+            .ToListAsync();
+
+        // 4. Mapping
+        var orderDtos = orders.Select(o => new OrderResponseDto(
+            o.Id,
+            o.CustomerId,
+            $"{o.Customer.FirstName} {o.Customer.LastName}",
+            o.OrderDate,
+            o.TotalAmount,
+            o.OrderItems.Select(oi => new OrderItemResponseDto(
+                oi.ProductId,
+                oi.Product.Name,
+                oi.Quantity,
+                oi.UnitPrice,
+                oi.Quantity * oi.UnitPrice
+            )).ToList()
+        ));
+
+        // 5. PagedResponse formatında dön (Ürünlerde yaptığımızın aynısı)
+        var response = new PagedResponse<OrderResponseDto>(
+            orderDtos, totalCount, paginationParams.PageNumber, paginationParams.PageSize
+        );
+
+        return Ok(response);
+    }
+
 
     [HttpPost]
     public async Task<ActionResult<OrderResponseDto>> CreateOrder(OrderCreateDto dto)

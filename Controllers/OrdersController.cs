@@ -5,6 +5,8 @@ using StoreHub.API.DTOs;
 using StoreHub.API.Models;
 using StoreHub.API.Helpers;
 using StoreHub.API.Params;
+using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
 
 namespace StoreHub.API.Controllers;
 
@@ -13,14 +15,17 @@ namespace StoreHub.API.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
 
-    public OrdersController(AppDbContext context)
+    public OrdersController(AppDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // GET: api/orders (Tüm siparişleri listele - Sayfalamalı ve Optimize edilmiş)
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PagedResponse<OrderResponseDto>>> GetOrders([FromQuery] PaginationParams paginationParams)
     {
         // 1. IQueryable oluştur ve AsNoTracking() EKLE! (İşte hız burada başlıyor)
@@ -43,7 +48,8 @@ public class OrdersController : ControllerBase
             .ToListAsync();
 
         // 4. Mapping
-        var orderDtos = orders.Select(o => new OrderResponseDto(
+        var orderDtos = _mapper.Map<List<OrderResponseDto>>(orders);
+        /*var orderDtos = orders.Select(o => new OrderResponseDto(
             o.Id,
             o.CustomerId,
             $"{o.Customer.FirstName} {o.Customer.LastName}",
@@ -56,7 +62,7 @@ public class OrdersController : ControllerBase
                 oi.UnitPrice,
                 oi.Quantity * oi.UnitPrice
             )).ToList()
-        ));
+        ));*/
 
         // 5. PagedResponse formatında dön (Ürünlerde yaptığımızın aynısı)
         var response = new PagedResponse<OrderResponseDto>(
@@ -123,7 +129,8 @@ public class OrdersController : ControllerBase
 
             // Sadece örnek olsun diye basit bir Response dönüyoruz, 
             // gerçekte Include() yapıp ilişkili verileri çekerek daha zengin Response yapabilirsin.
-            var response = new OrderResponseDto(
+            var response = _mapper.Map<OrderResponseDto>(order);
+            /*var response = new OrderResponseDto(
                 order.Id,
                 order.CustomerId,
                 $"{customer.FirstName} {customer.LastName}",
@@ -137,7 +144,7 @@ public class OrdersController : ControllerBase
                     oi.UnitPrice,
                     oi.Quantity * oi.UnitPrice
                 )).ToList()
-            );
+            );*/
 
             // Burada da 201 Created döndürüyoruz, tıpkı geçen derste öğrendiğimiz gibi.
             return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, response);
@@ -162,7 +169,9 @@ public class OrdersController : ControllerBase
         if (order == null)
             return NotFound();
 
-        var response = new OrderResponseDto(
+        
+        var orderDto = _mapper.Map<OrderResponseDto>(order);        
+        /*var response = new OrderResponseDto(
             order.Id,
             order.CustomerId,
             $"{order.Customer.FirstName} {order.Customer.LastName}",
@@ -175,8 +184,8 @@ public class OrdersController : ControllerBase
                 oi.UnitPrice,
                 oi.Quantity * oi.UnitPrice
             )).ToList()
-        );
+        );*/
 
-        return Ok(response);
+        return Ok(orderDto);
     }
 }

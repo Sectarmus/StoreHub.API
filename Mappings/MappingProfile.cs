@@ -27,5 +27,14 @@ public class MappingProfile : Profile
         CreateMap<ProductCreateDto, Product>();
         CreateMap<ProductUpdateDto, Product>();
         CreateMap<Product, ProductResponseDto>();
+
+        // 3. Sipariş (Order) Dönüşümleri
+        CreateMap<OrderItem, OrderItemResponseDto>()
+            .ForCtorParam("ProductName", opt => opt.MapFrom(src => src.Product.Name))
+            .ForCtorParam("TotalPrice", opt => opt.MapFrom(src => src.Quantity * src.UnitPrice));
+
+        CreateMap<Order, OrderResponseDto>()
+            .ForCtorParam("CustomerFullName", opt => opt.MapFrom(src => $"{src.Customer.FirstName} {src.Customer.LastName}"))
+            .ForCtorParam("Items", opt => opt.MapFrom(src => src.OrderItems));
     }
 }

@@ -24,7 +24,7 @@ public class CustomersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<CustomerResponseDto>>> GetCustomers()
     {
-        var customers = await _context.Customers.ToListAsync();
+        var customers = await _context.Customers.AsNoTracking().ToListAsync();
 
         // Sihir başlıyor: Liste halinde Customers objelerini -> CustomerResponseDto listesine (IEnumerable) çeviriyor.
         var response = _mapper.Map<IEnumerable<CustomerResponseDto>>(customers);
@@ -35,7 +35,7 @@ public class CustomersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<CustomerResponseDto>> GetCustomer(int id)
     {
-        var customer = await _context.Customers.FindAsync(id);
+        var customer = await _context.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id);
 
         if (customer == null)
             return NotFound(new { message = "Müşteri bulunamadı." });

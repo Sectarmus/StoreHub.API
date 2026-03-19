@@ -6,6 +6,7 @@ using StoreHub.API.DTOs;
 using StoreHub.API.Params;
 using StoreHub.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
 
 namespace StoreHub.API.Controllers;
 
@@ -14,11 +15,13 @@ namespace StoreHub.API.Controllers;
 public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IMapper _mapper;
 
-    // Dependency Injection: Daha önce Program.cs'te kaydettiğimiz DbContext'i buraya istiyoruz.
-    public ProductsController(AppDbContext context)
+    // Dependency Injection: Daha önce Program.cs'te kaydettiğimiz DbContext ve AutoMapper'ı buraya istiyoruz.
+    public ProductsController(AppDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     // 1. GET: api/products (Tüm ürünleri listele)
@@ -27,7 +30,7 @@ public class ProductsController : ControllerBase
     {
         // 1. Sorguyu oluştur (Henüz veritabanına gitmedi!)
         // Deftere Not: IQueryable, sorgunun PostgreSQL tarafına gitmeden önce hazırlandığı halidir.
-        var query = _context.Products.AsQueryable();
+        var query = _context.Products.AsNoTracking().AsQueryable();
         // 2. Filtreleme (Filtering)
         if (!string.IsNullOrEmpty(productParams.Search))
         {
@@ -49,9 +52,7 @@ public class ProductsController : ControllerBase
             .ToListAsync();
 
         // 3. Mapping
-        var productDtos = products.Select(p => new ProductResponseDto(
-            p.Id, p.Name, p.Description, p.Price, p.Stock, p.CreatedAt
-        ));
+        var productDtos = _mapper.Map<List<ProductResponseDto>>(products);
 
         // 4. PagedResponse objesini oluştur ve dön
         var response = new PagedResponse<ProductResponseDto>(
@@ -65,25 +66,12 @@ public class ProductsController : ControllerBase
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductResponseDto>> CreateProduct(ProductCreateDto dto)
     {
-        var product = new Product
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            Price = dto.Price,
-            Stock = dto.Stock
-        };
+        var product = _mapper.Map<Product>(dto);
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
-        var response = new ProductResponseDto(
-            product.Id,
-            product.Name,
-            product.Description,
-            product.Price,
-            product.Stock,
-            product.CreatedAt
-        );
+        var response = _mapper.Map<ProductResponseDto>(product);
 
         return CreatedAtAction(nameof(GetProducts), new { id = product.Id }, response);
     }
@@ -92,21 +80,14 @@ public class ProductsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductResponseDto>> GetProduct(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id);
 
         if (product == null)
         {
             return NotFound(new { message = $"{id} numaralı ürün bulunamadı." });
         }
 
-        var response = new ProductResponseDto(
-        product.Id,
-        product.Name,
-        product.Description,
-        product.Price,
-        product.Stock,
-        product.CreatedAt
-        );
+        var response = _mapper.Map<ProductResponseDto>(product);
 
         return Ok(response);
     }
@@ -130,10 +111,7 @@ public class ProductsController : ControllerBase
     }
 
     // 3. Mapping: DTO'dan gelenleri gerçek Entity nesnesine aktar
-    product.Name = dto.Name;
-    product.Description = dto.Description;
-    product.Price = dto.Price;
-    product.Stock = dto.Stock;
+    _mapper.Map(dto, product);
 
     // Not: Buradan sonra 'EntityState'i elle değiştirmeye gerek yok, 
     // EF Core bu nesneyi 'Track' (takip) ettiği için değişiklikleri anlar.

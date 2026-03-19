@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(StoreHub.API.Mappings.MappingProfile));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {

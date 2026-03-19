@@ -131,3 +131,4 @@ C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\Microsoft.Identity
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\Microsoft.IdentityModel.Tokens.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\BCrypt.Net-Next.dll
+C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\AutoMapper.dll

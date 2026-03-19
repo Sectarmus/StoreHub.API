@@ -4,6 +4,7 @@ using StoreHub.API.Data;
 using StoreHub.API.Models;
 using StoreHub.API.DTOs;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization; // [Authorize] etiketi için
 
 namespace StoreHub.API.Controllers;
 
@@ -45,6 +46,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<CustomerResponseDto>> CreateCustomer(CustomerCreateDto dto)
     {
         // DTO'dan (girdi) -> Model'e (veritabanı) doğru çeviri yapar (Boş formatı senin verdiğin kuralla doldurur)
@@ -59,6 +61,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateCustomer(int id, CustomerUpdateDto dto)
     {
         if (id != dto.Id)
@@ -78,6 +81,7 @@ public class CustomersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteCustomer(int id)
     {
         var customer = await _context.Customers.FindAsync(id);

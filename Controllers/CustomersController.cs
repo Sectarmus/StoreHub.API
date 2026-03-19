@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using StoreHub.API.Data;
 using StoreHub.API.Models;
 using StoreHub.API.DTOs;
+using AutoMapper;
 
 namespace StoreHub.API.Controllers;
 
@@ -11,10 +12,12 @@ namespace StoreHub.API.Controllers;
 public class CustomersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IMapper _mapper; // AutoMapper asistanımız
 
-    public CustomersController(AppDbContext context)
+    public CustomersController(AppDbContext context, IMapper mapper)
     {
         _context = context;
+        _mapper = mapper;
     }
 
     [HttpGet]
@@ -22,13 +25,8 @@ public class CustomersController : ControllerBase
     {
         var customers = await _context.Customers.ToListAsync();
 
-        var response = customers.Select(c => new CustomerResponseDto(
-            c.Id,
-            c.FirstName,
-            c.LastName,
-            c.Email,
-            $"{c.FirstName} {c.LastName}" // FullName oluşturuluyor
-        ));
+        // Sihir başlıyor: Liste halinde Customers objelerini -> CustomerResponseDto listesine (IEnumerable) çeviriyor.
+        var response = _mapper.Map<IEnumerable<CustomerResponseDto>>(customers);
 
         return Ok(response);
     }
@@ -41,13 +39,7 @@ public class CustomersController : ControllerBase
         if (customer == null)
             return NotFound(new { message = "Müşteri bulunamadı." });
 
-        var response = new CustomerResponseDto(
-            customer.Id,
-            customer.FirstName,
-            customer.LastName,
-            customer.Email,
-            $"{customer.FirstName} {customer.LastName}"
-        );
+        var response = _mapper.Map<CustomerResponseDto>(customer);
 
         return Ok(response);
     }
@@ -55,23 +47,13 @@ public class CustomersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CustomerResponseDto>> CreateCustomer(CustomerCreateDto dto)
     {
-        var customer = new Customer
-        {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email
-        };
+        // DTO'dan (girdi) -> Model'e (veritabanı) doğru çeviri yapar (Boş formatı senin verdiğin kuralla doldurur)
+        var customer = _mapper.Map<Customer>(dto);
 
         _context.Customers.Add(customer);
         await _context.SaveChangesAsync();
 
-        var response = new CustomerResponseDto(
-            customer.Id,
-            customer.FirstName,
-            customer.LastName,
-            customer.Email,
-            $"{customer.FirstName} {customer.LastName}"
-        );
+        var response = _mapper.Map<CustomerResponseDto>(customer);
 
         return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, response);
     }
@@ -86,9 +68,9 @@ public class CustomersController : ControllerBase
         if (customer == null)
             return NotFound(new { message = "Müşteri bulunamadı." });
 
-        customer.FirstName = dto.FirstName;
-        customer.LastName = dto.LastName;
-        customer.Email = dto.Email;
+        // Dıştaki DTO'dan gelen GÜNCEL verileri, veritabanından bulduğumuz Customer Varlığının İÇİNE DÖKER!
+        // Tek tek customer.FirstName = dto.FirstName ameleliğinden kurtulduk!
+        _mapper.Map(dto, customer);
 
         await _context.SaveChangesAsync();
 

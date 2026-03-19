@@ -5,6 +5,7 @@ using StoreHub.API.Models;
 using StoreHub.API.DTOs;
 using StoreHub.API.Params;
 using StoreHub.API.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace StoreHub.API.Controllers;
 
@@ -59,8 +60,9 @@ public class ProductsController : ControllerBase
         return Ok(response);
     }
 
-    // 2. POST: api/products (Ürün ekle)
+    // 2. POST: api/products (Ürün ekle) - Sadece Yetkililer (Token'ı olanlar) girebilir
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductResponseDto>> CreateProduct(ProductCreateDto dto)
     {
         var product = new Product
@@ -109,9 +111,10 @@ public class ProductsController : ControllerBase
         return Ok(response);
     }
 
-    // 4. PUT: api/products/{id} (Ürün Güncelle)
+    // 4. PUT: api/products/{id} (Ürün Güncelle) - Sadece Yetkililer
     [HttpPut("{id}")]
-public async Task<IActionResult> UpdateProduct(int id, ProductUpdateDto dto)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateProduct(int id, ProductUpdateDto dto)
 {
     // 1. Gelen ID ile DTO içindeki ID uyuşuyor mu? (Güvenlik kontrolü)
     if (id != dto.Id)
@@ -141,8 +144,9 @@ public async Task<IActionResult> UpdateProduct(int id, ProductUpdateDto dto)
 }
 
 
-    // 5. DELETE: api/products/{id} (Ürün Sil)
+    // 5. DELETE: api/products/{id} (Ürün Sil) - Sadece Yetkililer
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id)
     {
         var product = await _context.Products.FindAsync(id);

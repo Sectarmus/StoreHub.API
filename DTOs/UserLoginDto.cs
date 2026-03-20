@@ -1,6 +1,6 @@
 namespace StoreHub.API.DTOs;
 
 public record UserLoginDto(
-    [Required] string Username,
-    [Required] string Password
+    string Username,
+    string Password
 );

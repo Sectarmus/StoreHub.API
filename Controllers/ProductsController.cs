@@ -7,6 +7,7 @@ using StoreHub.API.Params;
 using StoreHub.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
+using System.IO;
 
 namespace StoreHub.API.Controllers;
 
@@ -139,4 +140,39 @@ public class ProductsController : ControllerBase
         return Ok(new { message = "Ürün başarıyla silindi." });
     }
 
+    // 6. POST: api/products/{id}/image (Resim Yükle) - Sadece Adminler
+    [HttpPost("{id}/image")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UploadProductImage(int id, IFormFile file)
+    {
+        var product = await _context.Products.FindAsync(id);
+        if (product == null) return NotFound("Ürün bulunamadı");
+
+        if (file == null || file.Length == 0) return BadRequest("Lütfen bir dosya seçin.");
+
+        // Güvenlik: Sadece bu uzantılara izin ver
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+        var extension = Path.GetExtension(file.FileName).ToLower();
+        if (!allowedExtensions.Contains(extension)) return BadRequest("Sadece resim (jpg, png) dosyaları kabul edilir!");
+
+        // Klasör Yolunu Belirle (Sunucu içindeki wwwroot klasörümüzde duracak)
+        var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
+        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath); // Yoksa klasörü yarat
+
+        // Benzersiz bir isim ver ki önceden yüklenen aynı isimli resimlerin üstüne telif atmasın (Guid)
+        var fileName = Guid.NewGuid().ToString() + extension;
+        var fullPath = Path.Combine(folderPath, fileName);
+
+        // Orijinal dosyayı sunucuya somut olarak KAYDET (Bu çok havalıdır!)
+        using (var stream = new FileStream(fullPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        // Veritabanına bu resmin dış dünyaya nereden yayınlanacağının adresini yaz
+        product.ImageUrl = $"/images/products/{fileName}";
+        await _context.SaveChangesAsync();
+
+        return Ok(new { message = "Resim başarıyla yüklendi", url = product.ImageUrl });
+    }
 }

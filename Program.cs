@@ -5,12 +5,16 @@ using StoreHub.API.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using FluentValidation; // Gerekli
+using FluentValidation.AspNetCore; // Gerekli
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation(); // 1. FluentValidation motorunu çalıştır
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // 2. Bu projenin (Program) içindeki tüm "Validator" yazan dosyaları otomatik bul ve kullan
 
 builder.Services.AddAutoMapper(cfg => 
 {
@@ -56,6 +60,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles(); // Internet dışarıdan 'wwwroot' içindeki resimleri görebilsin diye bu izin verilir.
 
 app.UseAuthentication(); // Önce kimlik doğrula (Kimlik kartın var mı?)
 app.UseAuthorization(); // Sonra yetki kontrolü yap (Girmeye hakkın var mı?)

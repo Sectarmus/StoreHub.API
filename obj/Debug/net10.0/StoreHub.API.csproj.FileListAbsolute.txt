@@ -132,3 +132,7 @@ C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\Microsoft.Identity
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\System.IdentityModel.Tokens.Jwt.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\BCrypt.Net-Next.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\AutoMapper.dll
+C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\StoreHub.API.staticwebassets.runtime.json
+C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.dll
+C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.AspNetCore.dll
+C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.DependencyInjectionExtensions.dll

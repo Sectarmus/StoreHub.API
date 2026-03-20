@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace StoreHub.API.DTOs;
 
 public record CustomerCreateDto(

@@ -15,10 +15,20 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddFluentValidationAutoValidation(); // 1. FluentValidation motorunu çalıştır
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // 2. Bu projenin (Program) içindeki tüm "Validator" yazan dosyaları otomatik bul ve kullan
-
 builder.Services.AddAutoMapper(cfg => 
 {
     cfg.AddProfile<StoreHub.API.Mappings.MappingProfile>();
+});
+
+// CORS Politikası: Frontend (React/Vue/Flutter vs.) uygulamanın bu API'ye erişebilmesi için güvenlik izni.
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()   // Herhangi bir domain'den (site) istek gelebilir.
+              .AllowAnyMethod()   // Her türlü HTTP metoduna (GET, POST, DELETE, PUT) izin ver.
+              .AllowAnyHeader();  // Her türlü Header'a (örneğin Authorization) izin ver.
+    });
 });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -62,6 +72,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles(); // Internet dışarıdan 'wwwroot' içindeki resimleri görebilsin diye bu izin verilir.
+
+app.UseCors("AllowAll"); // React / Yabancı Cihazlar için "Sınır Kapılarını Aç" kuralını devreye sok.
 
 app.UseAuthentication(); // Önce kimlik doğrula (Kimlik kartın var mı?)
 app.UseAuthorization(); // Sonra yetki kontrolü yap (Girmeye hakkın var mı?)

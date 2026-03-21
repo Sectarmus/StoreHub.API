@@ -1,0 +1,12 @@
+# Docker'ın sanal Linux konteyneri içine neleri KOPYALAMAMASI gerektiğini söyleriz. (Kutuyu çöple doldurmamak için)
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+*/bin
+*/obj
+*.suo
+*.user
+StoreHub.Tests/

@@ -82,4 +82,28 @@ app.MapScalarApiReference();
 
 app.MapControllers();
 
+// UYGULAMA ÇALIŞMADAN HEMEN ÖNCE: Veritabanı Tohumlama (Seeding) Adımı
+// Kendi sanal "alanımızı / evrenimizi (scope)" yaratıyoruz ki servislere ulaşabilelim
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        // Program içerisindeki DbContext dosyasını ödünç alıyoruz
+        var context = services.GetRequiredService<AppDbContext>();
+
+        // Eğer veritabanı yepyeni bir sunucuya atılırsa eksik Database kurulumlarını (Migration) otomatik uygular!
+        // Bu, sunucu (Docker vb.) dağıtımlarında hayat kurtaran profesyonel bir kod parçasıdır.
+        await context.Database.MigrateAsync();
+
+        // Tohumlama sınıfımızı çağırıp veritabanına can veriyoruz:
+        await StoreHub.API.Data.AppDbSeeder.SeedAsync(context);
+    }
+    catch (Exception ex)
+    {
+        // Gelişmiş projelerde buraya bir "Logger" yerleştirilir, şimdilik görmezden gelinebilir
+        Console.WriteLine("Veritabanı oluşturulurken bir hata oluştu: " + ex.Message);
+    }
+}
+
 app.Run();

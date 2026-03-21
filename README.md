@@ -1,31 +1,31 @@
-# 🛒 StoreHub.API
+# StoreHub.API
 
-StoreHub.API, C# ve .NET 10 (Preview) teknolojileri kullanılarak geliştirilmiş, sağlam bir E-Ticaret Backend çözümüdür. 
+StoreHub.API, C# ve .NET 10 teknolojileri kullanılarak geliştirilmiş kapsamlı bir E-Ticaret REST API (Backend) çözümüdür. Kullanılan modern yazılım mimarileri sayesinde yüksek ölçeklenebilirlik, performans ve güvenlik amaçlanmıştır.
 
-## 🚀 Proje Mimarisi (Neler Yaptık?)
+## Proje Altyapısı ve Özellikler
 
-Bu proje bir Junior yazılımcının portföyündeki en güçlü "Arka Uç (Backend)" taşlarından biridir:
+Bu proje, sektör standartlarında modern bir Web API geliştirme pratiğini yansıtacak şekilde inşa edilmiştir:
 
-*   **Veritabanı:** PostgreSQL (Entity Framework Core kullanılarak).
-*   **Güvenlik:** JWT (JSON Web Tokens) ile Kimlik Doğrulama (Login/Register). Şifreler **BCrypt** ile korunmaktadır.
-*   **Yetkilendirme:** Sınıflandırılmış Rol Mekanizması (`[Authorize(Roles="Admin")]`).
-*   **Mimariler:**
-    *   Sıfır amelelik için **AutoMapper**.
-    *   Hızlı sorgular için `AsNoTracking()` ve `IQueryable` (Sayfalama - Pagination Desteği).
-    *   Kompleks Sepet kayıtları için **Veritabanı İşlemleri (Transactions)**.
-*   **Güvenilirlik:**
-    *   Tüm form işlemleri **FluentValidation** tarafından kapıda denetlenir!
-    *   Sistem genelinde fırlatılan tüm hataları anında Türkçe JSON formatına çeviren özel **Global Exception Middleware** sınıfı içerir.
-*   **Medya:** Ürün fotoğrafı (`IFormFile`) ekleyebilme yeteneği.
-*   **Erişilebilirlik:** Ön yüz (Frontend) tasarımlarının kapıdan içeri sorunsuzca girebilmesi için yapılandırılmış **CORS** kalkanı.
+*   **Veritabanı ve ORM:** PostgreSQL veritabanı altyapısı, Entity Framework Core (Code First yaklaşımı). Yük getirmeyen veri listelemeleri için `AsNoTracking()` mimarisi.
+*   **Güvenlik ve Kimlik Doğrulama:** BCrypt kütüphanesi kullanılarak sağlanan şifreleme ve JWT (JSON Web Token) tabanlı Role-based Authorization tablosu.
+*   **Veri Bütünlüğü:** 
+    * Tüm HTTP veri akışları DTO (Data Transfer Object) deseni üzerinden gerçekleşmekte ve AutoMapper kütüphanesi ile eşleştirilmektedir.
+    * Gelen kullanıcı verileri özel katmanlar aracılığıyla uçtan uca FluentValidation üzerinden süzülüp filtrelemeye tabi tutulmaktadır.
+    * Sipariş ve finans işlemleri, tutarlılığı garantiye almak amacıyla Transaction bloklarıyla (`BeginTransactionAsync`) güven altına alınmıştır.
+*   **Hata Yönetimi (Error Handling):** Sistemin hiçbir aşamasında try-catch yığınları kullanılmamış; uygulamanın tüm istisnai durumları merkezi Global Exception Middleware üzerinden tek bir JSON nesnesi formatında istemciye yansıtılmıştır.
+*   **Medya Yönetimi:** Ürün fotoğrafı (`IFormFile`) işlemleri için tam donanımlı dosya yükleme mekanizması.
+*   **Erişilebilirlik:** Ön yüz (React, Vue vb.) entegrasyonu için yapılandırılmış Global CORS mekanizması.
 
+## Kurulum ve Çalıştırma Seçenekleri
 
-## 🛠 Kurulum ve Çalıştırma
-1. Projeyi bilgisayarınıza indirin (`git clone`).
-2. PostgreSQL kurun ve kendi bilgilerinizi `appsettings.json` altındaki `DefaultConnection`'a girin.
-3. Terminalde sırasıyla çalıştırın:
+Aşağıdaki adımları takip ederek projeyi yerel ortamınızda çalıştırabilirsiniz:
+
+1. Depoyu bilgisayarınıza klonlayın.
+2. PostgreSQL veritabanınızda bir şema oluşturun ve proje içerisindeki `appsettings.json` altındaki `DefaultConnection` satırını kendi ortamınıza göre güncelleyin.
+3. Terminalde `StoreHub.API` dizinine giderek sırasıyla şu komutları çalıştırın:
+    * `dotnet clean` (İsteğe bağlı)
     * `dotnet ef database update`
     * `dotnet run`
-4. Proje Scalar/Swagger arayüzü eşliğinde ayağa kalkacaktır! Meydan sizin.
+4. Uygulama çalıştıktan sonra Scalar OpenAPI arayüzü ile dökümantasyon sayfasına ulaşabilirsiniz.
 
-*Geliştirici:* **Alper (Sectarmus)** tarafından kodlanmıştır. 😎
+Geliştirici: Alper (Sectarmus)

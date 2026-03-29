@@ -2,7 +2,7 @@ namespace StoreHub.API.Params;
 
 public class PaginationParams
 {
-    private const int MaxPageSize = 50; // Güvenlik sınırı
+    private const int MaxPageSize = 50;
     public int PageNumber { get; set; } = 1;
 
     private int _pageSize = 10;

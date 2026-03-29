@@ -6,12 +6,9 @@ public class Order
     public DateTime OrderDate { get; set; } = DateTime.UtcNow;
     public decimal TotalAmount { get; set; }
 
-    // --- İlişki Kısmı ---
-    // Her sipariş mutlaka BİR müşteriye aittir.
-    public int CustomerId { get; set; } // Foreign Key (Yabancı Anahtar)
-    public Customer Customer { get; set; } = null!; // Navigation Property
+    public int UserId { get; set; }
+    public User User { get; set; } = null!;
 
-    // --- Yeni Eklenen: Bir siparişte birden fazla ürün kalemi olabilir ---
     public List<OrderItem> OrderItems { get; set; } = new();
 }
 

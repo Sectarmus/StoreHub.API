@@ -5,6 +5,7 @@ using StoreHub.API.DTOs;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory; // EKLEDİM
 using Moq; // Sisteme Moq kütüphanesini tanıttık
 using Xunit; // Test Kütüphanesi
 
@@ -14,6 +15,7 @@ public class ProductsControllerTests
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IMemoryCache _cache; // EKLEDİM
     private readonly ProductsController _controller;
 
     // Hazırlık: Her test çalışmadan önce "Sanal" bir ortam oluşturulur (Arrange Katmanı)
@@ -34,8 +36,11 @@ public class ProductsControllerTests
             ));
         _mapper = mockMapper.Object;
 
-        // 3. Controller'ın Test Örneğini (Instance) Yaratma
-        _controller = new ProductsController(_context, _mapper);
+        // 3. Sanal Hafıza (Cache) Kurulumu:
+        _cache = new MemoryCache(new MemoryCacheOptions());
+
+        // 4. Controller'ın Test Örneğini (Instance) Yaratma
+        _controller = new ProductsController(_context, _mapper, _cache);
     }
 
     // 1. TEST METODU

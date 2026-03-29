@@ -5,29 +5,30 @@ using StoreHub.API.Middlewares;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using FluentValidation; // Gerekli
-using FluentValidation.AspNetCore; // Gerekli
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddMemoryCache();
 
 builder.Services.AddControllers();
-builder.Services.AddFluentValidationAutoValidation(); // 1. FluentValidation motorunu çalıştır
-builder.Services.AddValidatorsFromAssemblyContaining<Program>(); // 2. Bu projenin (Program) içindeki tüm "Validator" yazan dosyaları otomatik bul ve kullan
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddAutoMapper(cfg => 
 {
     cfg.AddProfile<StoreHub.API.Mappings.MappingProfile>();
 });
 
-// CORS Politikası: Frontend (React/Vue/Flutter vs.) uygulamanın bu API'ye erişebilmesi için güvenlik izni.
+// CORS Policy configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin()   // Herhangi bir domain'den (site) istek gelebilir.
-              .AllowAnyMethod()   // Her türlü HTTP metoduna (GET, POST, DELETE, PUT) izin ver.
-              .AllowAnyHeader();  // Her türlü Header'a (örneğin Authorization) izin ver.
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
@@ -36,7 +37,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-// JWT Authentication ayarları:
+// JWT Authentication configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["Key"];
 
@@ -71,38 +72,34 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseStaticFiles(); // Internet dışarıdan 'wwwroot' içindeki resimleri görebilsin diye bu izin verilir.
+app.UseStaticFiles();
 
-app.UseCors("AllowAll"); // React / Yabancı Cihazlar için "Sınır Kapılarını Aç" kuralını devreye sok.
+app.UseCors("AllowAll");
 
-app.UseAuthentication(); // Önce kimlik doğrula (Kimlik kartın var mı?)
-app.UseAuthorization(); // Sonra yetki kontrolü yap (Girmeye hakkın var mı?)
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapScalarApiReference();
 
 app.MapControllers();
 
-// UYGULAMA ÇALIŞMADAN HEMEN ÖNCE: Veritabanı Tohumlama (Seeding) Adımı
-// Kendi sanal "alanımızı / evrenimizi (scope)" yaratıyoruz ki servislere ulaşabilelim
+// Apply migrations and seed data at startup
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
-        // Program içerisindeki DbContext dosyasını ödünç alıyoruz
         var context = services.GetRequiredService<AppDbContext>();
 
-        // Eğer veritabanı yepyeni bir sunucuya atılırsa eksik Database kurulumlarını (Migration) otomatik uygular!
-        // Bu, sunucu (Docker vb.) dağıtımlarında hayat kurtaran profesyonel bir kod parçasıdır.
+        // Apply pending migrations automatically
         await context.Database.MigrateAsync();
 
-        // Tohumlama sınıfımızı çağırıp veritabanına can veriyoruz:
+        // Seed initial data
         await StoreHub.API.Data.AppDbSeeder.SeedAsync(context);
     }
     catch (Exception ex)
     {
-        // Gelişmiş projelerde buraya bir "Logger" yerleştirilir, şimdilik görmezden gelinebilir
-        Console.WriteLine("Veritabanı oluşturulurken bir hata oluştu: " + ex.Message);
+        Console.WriteLine("An error occurred during database migration or seeding: " + ex.Message);
     }
 }
 

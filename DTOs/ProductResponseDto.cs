@@ -6,6 +6,7 @@ public record ProductResponseDto(
     string Description,
     decimal Price,
     int Stock,
-    string ImageUrl, // Yeni Eklenen
+    string Category,
+    string ImageUrl,
     DateTime CreatedAt
 );

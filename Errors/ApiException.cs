@@ -11,5 +11,5 @@ public class ApiException
 
     public int StatusCode { get; set; }
     public string Message { get; set; }
-    public string? Details { get; set; } // Bu alan sadece "Development" modunda dolu olacak.
+    public string? Details { get; set; }
 }

@@ -77,6 +77,10 @@
             "Scalar.AspNetCore": {
               "target": "Package",
               "version": "[2.13.2, )"
+            },
+            "System.Net.Http.Json": {
+              "target": "Package",
+              "version": "[10.0.5, )"
             }
           },
           "imports": [

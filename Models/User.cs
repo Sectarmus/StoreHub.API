@@ -5,9 +5,11 @@ public class User
     public int Id { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public string PasswordHash { get; set; } = string.Empty; // Şifrelenmiş halde tutacağız!
+    public string PasswordHash { get; set; } = string.Empty;
 
-    public string Role { get; set; } = "Customer"; // Sisteme giren varsayılan olarak müşteridir. ("Admin" yapacağız bazılarını)
+    public string Role { get; set; } = "Customer";
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public List<Order> Orders { get; set; } = new();
 }

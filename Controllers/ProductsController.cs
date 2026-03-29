@@ -8,61 +8,83 @@ using StoreHub.API.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
 using System.IO;
+using Microsoft.Extensions.Caching.Memory; // IMemoryCache kütüphanesi
 
 namespace StoreHub.API.Controllers;
 
-[ApiController] // Bu sınıfın bir API Controller olduğunu belirtir.
-[Route("api/[controller]")] // URL adresi: /api/products şeklinde olur.
+[ApiController]
+[Route("api/[controller]")]
 public class ProductsController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly IMemoryCache _cache;
 
-    // Dependency Injection: Daha önce Program.cs'te kaydettiğimiz DbContext ve AutoMapper'ı buraya istiyoruz.
-    public ProductsController(AppDbContext context, IMapper mapper)
+    public ProductsController(AppDbContext context, IMapper mapper, IMemoryCache cache)
     {
         _context = context;
         _mapper = mapper;
+        _cache = cache;
     }
 
-    // 1. GET: api/products (Tüm ürünleri listele)
+    // 1. GET: api/products (List all products)
     [HttpGet]
     public async Task<ActionResult<PagedResponse<ProductResponseDto>>> GetProducts([FromQuery] ProductParams productParams)
     {
-        // 1. Sorguyu oluştur (Henüz veritabanına gitmedi!)
-        // Deftere Not: IQueryable, sorgunun PostgreSQL tarafına gitmeden önce hazırlandığı halidir.
-        var query = _context.Products.AsNoTracking().AsQueryable();
-        // 2. Filtreleme (Filtering)
-        if (!string.IsNullOrEmpty(productParams.Search))
+        string cacheKey = $"products_{productParams.PageNumber}_{productParams.PageSize}_{productParams.Search}_{productParams.MinPrice}_{productParams.MaxPrice}_{productParams.Category}";
+
+        var response = await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            // SQL: WHERE Name ILIKE '%search%'
-            query = query.Where(p => p.Name.ToLower().Contains(productParams.Search.ToLower()));
-        }
-        if (productParams.MinPrice.HasValue)
-            query = query.Where(p => p.Price >= productParams.MinPrice.Value);
-        if (productParams.MaxPrice.HasValue)
-            query = query.Where(p => p.Price <= productParams.MaxPrice.Value);
-        // 3. Sayfalama (Pagination)
-        // 1. Toplam sayıyı al (Filtreleme uygulandıktan sonra, ama sayfalama yapılmadan önce!)
-        var totalCount = await query.CountAsync();
-        // 2. Sayfalanmış veriyi çek
-        // SQL: OFFSET (PageNumber-1)*PageSize LIMIT PageSize
-        var products = await query
-            .Skip((productParams.PageNumber - 1) * productParams.PageSize)
-            .Take(productParams.PageSize)
-            .ToListAsync();
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
 
-        // 3. Mapping
-        var productDtos = _mapper.Map<List<ProductResponseDto>>(products);
+            var query = _context.Products.AsNoTracking().AsQueryable();
 
-        // 4. PagedResponse objesini oluştur ve dön
-        var response = new PagedResponse<ProductResponseDto>(
-            productDtos, totalCount, productParams.PageNumber, productParams.PageSize
-        );
+            if (!string.IsNullOrEmpty(productParams.Search))
+            {
+                var search = productParams.Search.ToLower();
+                query = query.Where(p => p.Name.ToLower().Contains(search) || p.Description.ToLower().Contains(search));
+            }
+            if (productParams.MinPrice.HasValue)
+                query = query.Where(p => p.Price >= productParams.MinPrice.Value);
+            if (productParams.MaxPrice.HasValue)
+                query = query.Where(p => p.Price <= productParams.MaxPrice.Value);
+            if (!string.IsNullOrEmpty(productParams.Category))
+                query = query.Where(p => p.Category.ToLower() == productParams.Category.ToLower());
+                
+            var totalCount = await query.CountAsync();
+
+            var products = await query
+                .Skip((productParams.PageNumber - 1) * productParams.PageSize)
+                .Take(productParams.PageSize)
+                .ToListAsync();
+
+            var productDtos = _mapper.Map<List<ProductResponseDto>>(products);
+
+            return new PagedResponse<ProductResponseDto>(
+                productDtos, totalCount, productParams.PageNumber, productParams.PageSize
+            );
+        });
+
         return Ok(response);
     }
 
-    // 2. POST: api/products (Ürün ekle) - Sadece Yetkililer (Token'ı olanlar) girebilir
+    [HttpGet("categories")]
+    public async Task<ActionResult<List<string>>> GetCategories()
+    {
+        var categories = await _cache.GetOrCreateAsync("categories_list", async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
+            return await _context.Products
+                .Select(p => p.Category)
+                .Distinct()
+                .Where(c => !string.IsNullOrEmpty(c))
+                .ToListAsync();
+        });
+
+        return Ok(categories);
+    }
+
+    // 2. POST: api/products (Add a product) - Admins only
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<ProductResponseDto>> CreateProduct(ProductCreateDto dto)
@@ -77,7 +99,7 @@ public class ProductsController : ControllerBase
         return CreatedAtAction(nameof(GetProducts), new { id = product.Id }, response);
     }
 
-    // 3. GET: api/products/{id} (Tek bir ürün getir)
+    // 3. GET: api/products/{id} (Get single product)
     [HttpGet("{id}")]
     public async Task<ActionResult<ProductResponseDto>> GetProduct(int id)
     {
@@ -85,7 +107,7 @@ public class ProductsController : ControllerBase
 
         if (product == null)
         {
-            return NotFound(new { message = $"{id} numaralı ürün bulunamadı." });
+            return NotFound(new { message = $"Product with ID {id} not found." });
         }
 
         var response = _mapper.Map<ProductResponseDto>(product);
@@ -93,37 +115,31 @@ public class ProductsController : ControllerBase
         return Ok(response);
     }
 
-    // 4. PUT: api/products/{id} (Ürün Güncelle) - Sadece Yetkililer
+    // 4. PUT: api/products/{id} (Update product) - Admins only
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UpdateProduct(int id, ProductUpdateDto dto)
-{
-    // 1. Gelen ID ile DTO içindeki ID uyuşuyor mu? (Güvenlik kontrolü)
-    if (id != dto.Id)
     {
-        return BadRequest(new { message = "URL'deki ID ile verideki ID eşleşmiyor." });
+        if (id != dto.Id)
+        {
+            return BadRequest(new { message = "ID in URL does not match ID in data." });
+        }
+
+        var product = await _context.Products.FindAsync(id);
+        if (product == null)
+        {
+            return NotFound(new { message = "Product to update not found." });
+        }
+
+        _mapper.Map(dto, product);
+
+        await _context.SaveChangesAsync();
+
+        return NoContent(); // 204: Success, no content to return
     }
 
-    // 2. Veritabanında bu ürün gerçekten var mı?
-    var product = await _context.Products.FindAsync(id);
-    if (product == null)
-    {
-        return NotFound(new { message = "Güncellenecek ürün bulunamadı." });
-    }
 
-    // 3. Mapping: DTO'dan gelenleri gerçek Entity nesnesine aktar
-    _mapper.Map(dto, product);
-
-    // Not: Buradan sonra 'EntityState'i elle değiştirmeye gerek yok, 
-    // EF Core bu nesneyi 'Track' (takip) ettiği için değişiklikleri anlar.
-
-    await _context.SaveChangesAsync();
-
-    return NoContent(); // 204: Başarılı ama yeni veri dönmeye gerek yok.
-}
-
-
-    // 5. DELETE: api/products/{id} (Ürün Sil) - Sadece Yetkililer
+    // 5. DELETE: api/products/{id} (Delete product) - Admins only
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteProduct(int id)
@@ -137,42 +153,37 @@ public class ProductsController : ControllerBase
         _context.Products.Remove(product);
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Ürün başarıyla silindi." });
+        return Ok(new { message = "Product deleted successfully." });
     }
 
-    // 6. POST: api/products/{id}/image (Resim Yükle) - Sadece Adminler
+    // 6. POST: api/products/{id}/image (Upload image) - Admins only
     [HttpPost("{id}/image")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> UploadProductImage(int id, IFormFile file)
     {
         var product = await _context.Products.FindAsync(id);
-        if (product == null) return NotFound("Ürün bulunamadı");
+        if (product == null) return NotFound("Product not found");
 
-        if (file == null || file.Length == 0) return BadRequest("Lütfen bir dosya seçin.");
+        if (file == null || file.Length == 0) return BadRequest("Please select a file.");
 
-        // Güvenlik: Sadece bu uzantılara izin ver
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
         var extension = Path.GetExtension(file.FileName).ToLower();
-        if (!allowedExtensions.Contains(extension)) return BadRequest("Sadece resim (jpg, png) dosyaları kabul edilir!");
+        if (!allowedExtensions.Contains(extension)) return BadRequest("Only image files (jpg, png) are accepted!");
 
-        // Klasör Yolunu Belirle (Sunucu içindeki wwwroot klasörümüzde duracak)
         var folderPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "products");
-        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath); // Yoksa klasörü yarat
+        if (!Directory.Exists(folderPath)) Directory.CreateDirectory(folderPath);
 
-        // Benzersiz bir isim ver ki önceden yüklenen aynı isimli resimlerin üstüne telif atmasın (Guid)
         var fileName = Guid.NewGuid().ToString() + extension;
         var fullPath = Path.Combine(folderPath, fileName);
 
-        // Orijinal dosyayı sunucuya somut olarak KAYDET (Bu çok havalıdır!)
         using (var stream = new FileStream(fullPath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
 
-        // Veritabanına bu resmin dış dünyaya nereden yayınlanacağının adresini yaz
         product.ImageUrl = $"/images/products/{fileName}";
         await _context.SaveChangesAsync();
 
-        return Ok(new { message = "Resim başarıyla yüklendi", url = product.ImageUrl });
+        return Ok(new { message = "Image uploaded successfully", url = product.ImageUrl });
     }
 }

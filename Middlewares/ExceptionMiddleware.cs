@@ -6,9 +6,9 @@ namespace StoreHub.API.Middlewares;
 
 public class ExceptionMiddleware
 {
-    private readonly RequestDelegate _next; // Hattaki bir sonraki bileşene geçmek için
-    private readonly ILogger<ExceptionMiddleware> _logger; // Hatayı terminale yazmak için
-    private readonly IHostEnvironment _env; // Projenin "Development" mı "Production" mı olduğunu anlamak için
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionMiddleware> _logger;
+    private readonly IHostEnvironment _env;
     public ExceptionMiddleware(RequestDelegate next, ILogger<ExceptionMiddleware> logger, IHostEnvironment env)
     {
         _next = next;
@@ -19,13 +19,13 @@ public class ExceptionMiddleware
     {
         try
         {
-            await _next(context); // Her şey yolundaysa bir sonraki adıma geç
+            await _next(context);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, ex.Message); // Hatayı terminale yaz
+            _logger.LogError(ex, ex.Message);
             context.Response.ContentType = "application/json";
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError; // 500 Hatası
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             var response = _env.IsDevelopment()
                 ? new ApiException(context.Response.StatusCode, ex.Message, ex.StackTrace?.ToString())
                 : new ApiException(context.Response.StatusCode, "Internal Server Error");

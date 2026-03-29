@@ -14,27 +14,26 @@ namespace StoreHub.API.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
-{
     private readonly AppDbContext _context;
     private readonly IConfiguration _configuration;
 
     public AuthController(AppDbContext context, IConfiguration configuration)
     {
         _context = context;
-        _configuration = configuration; // appsettings.json dosyasını okumak için
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<AuthResponseDto>> Register(UserRegisterDto dto)
     {
-        // 1. Kullanıcı adı veya e-posta kullanımda mı?
+        // Check if username or email is already taken
         if (await _context.Users.AnyAsync(u => u.Username == dto.Username))
-            return BadRequest(new { message = "Bu kullanıcı adı zaten alınmış." });
+            return BadRequest(new { message = "Username is already taken." });
 
         if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
-            return BadRequest(new { message = "Bu e-posta adresi zaten kullanımda." });
+            return BadRequest(new { message = "Email is already in use." });
 
-        // 2. Şifreyi Hash'le (BCrypt kullanarak geriye döndürülemez hale getiriyoruz)
+        // Hash the password securely using BCrypt
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
         var user = new User
@@ -42,13 +41,13 @@ public class AuthController : ControllerBase
             Username = dto.Username,
             Email = dto.Email,
             PasswordHash = passwordHash,
-            Role = "Customer" // Varsayılan rol
+            Role = "Customer"
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
 
-        // 3. Başarılı kayıt sonrası direkt token üretip giriş yapmış sayabiliriz
+        // Generate token and automatically log the user in after successful registration
         var token = GenerateJwtToken(user);
 
         var response = new AuthResponseDto(
@@ -64,17 +63,17 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<ActionResult<AuthResponseDto>> Login(UserLoginDto dto)
     {
-        // 1. Kullanıcıyı bul
+        // Verify user existence
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == dto.Username);
         if (user == null)
-            return Unauthorized(new { message = "Kullanıcı adı veya şifre hatalı." }); // Bilerek spesifik hata vermiyoruz ki hackerlar anlamasın
+            return Unauthorized(new { message = "Invalid username or password." });
 
-        // 2. Şifre doğru mu kontrol et
+        // Verify password hash
         var isPasswordValid = BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash);
         if (!isPasswordValid)
-            return Unauthorized(new { message = "Kullanıcı adı veya şifre hatalı." });
+            return Unauthorized(new { message = "Invalid username or password." });
 
-        // 3. Şifre doğruysa Token üret
+        // Generate JWT token on successful login
         var token = GenerateJwtToken(user);
 
         var response = new AuthResponseDto(
@@ -87,29 +86,25 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    // --- JWT Üretim Motoru (Mühendislik Harikası) ---
+    // Generates a secure JSON Web Token for authenticated users
     private string GenerateJwtToken(User user)
     {
         var jwtSettings = _configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["Key"];
 
-        // 1. Kimlik Kartının İçine Yazılacak Bilgiler (Claims)
         var claims = new List<Claim>
         {
             new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
             new Claim(ClaimTypes.Role, user.Role),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()) // Token'a özel benzersiz ID
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
 
-        // 2. İmza (Şifreleme)
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey!));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); // Bu şifreleme algoritmasıdır
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        // 3. Kartın Son Kullanma Tarihi
         var expirationDays = Convert.ToDouble(jwtSettings["DurationInDays"]);
 
-        // 4. Kartı (Token) Oluştur
         var token = new JwtSecurityToken(
             issuer: jwtSettings["Issuer"],
             audience: jwtSettings["Audience"],
@@ -118,7 +113,6 @@ public class AuthController : ControllerBase
             signingCredentials: creds
         );
 
-        // Şifreli metin olarak geri dön
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

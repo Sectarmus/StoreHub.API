@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "M5fJ1F4n8+o=",
+  "dgSpecHash": "7INz8XWmz0A=",
   "success": true,
   "projectFilePath": "C:\\Users\\Alper\\Desktop\\backend\\StoreHub.API\\StoreHub.API.csproj",
   "expectedPackageFiles": [
@@ -45,7 +45,21 @@
     "C:\\Users\\Alper\\.nuget\\packages\\system.composition.hosting\\9.0.0\\system.composition.hosting.9.0.0.nupkg.sha512",
     "C:\\Users\\Alper\\.nuget\\packages\\system.composition.runtime\\9.0.0\\system.composition.runtime.9.0.0.nupkg.sha512",
     "C:\\Users\\Alper\\.nuget\\packages\\system.composition.typedparts\\9.0.0\\system.composition.typedparts.9.0.0.nupkg.sha512",
-    "C:\\Users\\Alper\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.0.1\\system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512"
+    "C:\\Users\\Alper\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.0.1\\system.identitymodel.tokens.jwt.8.0.1.nupkg.sha512",
+    "C:\\Users\\Alper\\.nuget\\packages\\system.net.http.json\\10.0.5\\system.net.http.json.10.0.5.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference System.Net.Http.Json ayıklanmayacak. Bu paketi bağımlılıklarınızdan kaldırmayı düşünün, çünkü muhtemelen gereksizdir.",
+      "projectPath": "C:\\Users\\Alper\\Desktop\\backend\\StoreHub.API\\StoreHub.API.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\Alper\\Desktop\\backend\\StoreHub.API\\StoreHub.API.csproj",
+      "libraryId": "System.Net.Http.Json",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

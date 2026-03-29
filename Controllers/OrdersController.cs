@@ -7,6 +7,7 @@ using StoreHub.API.Helpers;
 using StoreHub.API.Params;
 using Microsoft.AspNetCore.Authorization;
 using AutoMapper;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace StoreHub.API.Controllers;
 
@@ -16,106 +17,91 @@ public class OrdersController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IMapper _mapper;
+    private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
 
-    public OrdersController(AppDbContext context, IMapper mapper)
+    public OrdersController(AppDbContext context, IMapper mapper, Microsoft.Extensions.Caching.Memory.IMemoryCache cache)
     {
         _context = context;
         _mapper = mapper;
+        _cache = cache;
     }
 
-    // GET: api/orders (Tüm siparişleri listele - Sayfalamalı ve Optimize edilmiş)
+    // GET: api/orders (List all orders - Paginated and Optimized)
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<PagedResponse<OrderResponseDto>>> GetOrders([FromQuery] PaginationParams paginationParams)
     {
-        // 1. IQueryable oluştur ve AsNoTracking() EKLE! (İşte hız burada başlıyor)
-        var query = _context.Orders
-            .Include(o => o.Customer)
-            .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product)
-            .AsNoTracking() // EF Core'a "sadece oku, takip etme" dedik.
-            .AsQueryable();
+        string cacheKey = $"orders_{paginationParams.PageNumber}_{paginationParams.PageSize}";
 
-        // 2. Toplam Kayıt Sayısı
-        var totalCount = await query.CountAsync();
+        var response = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        {
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(15);
 
-        // 3. Sayfalama (Skip & Take) ve Veritabanına Vuruş (ToListAsync)
-        // Siparişleri tarihe göre en yeniden eskiye doğru sıralayalım ki en son sipariş en üstte çıksın (Order By Descending)
-        var orders = await query
-            .OrderByDescending(o => o.OrderDate)
-            .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
-            .Take(paginationParams.PageSize)
-            .ToListAsync();
+            var query = _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                .AsNoTracking()
+                .AsQueryable();
 
-        // 4. Mapping
-        var orderDtos = _mapper.Map<List<OrderResponseDto>>(orders);
-        /*var orderDtos = orders.Select(o => new OrderResponseDto(
-            o.Id,
-            o.CustomerId,
-            $"{o.Customer.FirstName} {o.Customer.LastName}",
-            o.OrderDate,
-            o.TotalAmount,
-            o.OrderItems.Select(oi => new OrderItemResponseDto(
-                oi.ProductId,
-                oi.Product.Name,
-                oi.Quantity,
-                oi.UnitPrice,
-                oi.Quantity * oi.UnitPrice
-            )).ToList()
-        ));*/
+            var totalCount = await query.CountAsync();
 
-        // 5. PagedResponse formatında dön (Ürünlerde yaptığımızın aynısı)
-        var response = new PagedResponse<OrderResponseDto>(
-            orderDtos, totalCount, paginationParams.PageNumber, paginationParams.PageSize
-        );
+            var orders = await query
+                .OrderByDescending(o => o.OrderDate)
+                .Skip((paginationParams.PageNumber - 1) * paginationParams.PageSize)
+                .Take(paginationParams.PageSize)
+                .ToListAsync();
+
+            var orderDtos = _mapper.Map<List<OrderResponseDto>>(orders);
+
+            return new PagedResponse<OrderResponseDto>(
+                orderDtos, totalCount, paginationParams.PageNumber, paginationParams.PageSize
+            );
+        });
 
         return Ok(response);
     }
 
 
     [HttpPost]
+    [HttpPost]
+    [Authorize]
     public async Task<ActionResult<OrderResponseDto>> CreateOrder(OrderCreateDto dto)
     {
-        // 1. Müşteri var mı kontrol kontrolü
-        var customer = await _context.Customers.FindAsync(dto.CustomerId);
-        if (customer == null)
-            return NotFound(new { message = "Müşteri bulunamadı." });
+        // Get user ID securely from JWT token
+        var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId))
+            return Unauthorized(new { message = "Please login first." });
 
-        // İş İşlemleri (Transaction) Başlat
-        // Deftere Not: Veritabanında bir işlem yarım kalmasın diye "Transaction" kullanırız. 
-        // Ya hepsi başarılı olur ya da hiçbiri kaydedilmez.
         using var transaction = await _context.Database.BeginTransactionAsync();
 
         try
         {
             var order = new Order
             {
-                CustomerId = dto.CustomerId,
+                UserId = userId,
                 OrderDate = DateTime.UtcNow,
                 TotalAmount = 0 // Ürünleri hesapladıkça üstüne ekleyeceğiz
             };
 
             foreach (var itemDto in dto.Items)
             {
-                // Ürün stokta var mı kontrol edelim
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
                 if (product == null)
-                    return NotFound(new { message = $"{itemDto.ProductId} ID'li ürün bulunamadı." });
+                    return NotFound(new { message = $"Product with ID {itemDto.ProductId} not found." });
 
                 if (product.Stock < itemDto.Quantity)
-                    return BadRequest(new { message = $"{product.Name} ürününden stokta yeterli yok. Kalan: {product.Stock}" });
+                    return BadRequest(new { message = $"Not enough stock for {product.Name}. Remaining: {product.Stock}" });
 
-                // Ürün satıldığı için stoğu DÜŞÜRÜYORUZ!
                 product.Stock -= itemDto.Quantity;
 
                 var orderItem = new OrderItem
                 {
                     ProductId = product.Id,
                     Quantity = itemDto.Quantity,
-                    UnitPrice = product.Price // Tam o andaki satış fiyatını donduruyoruz
+                    UnitPrice = product.Price
                 };
 
-                // Fatura toplam tutarını hesaplıyoruz
                 order.TotalAmount += (orderItem.Quantity * orderItem.UnitPrice);
 
                 order.OrderItems.Add(orderItem);
@@ -123,68 +109,39 @@ public class OrdersController : ControllerBase
 
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
-
-            // Eğer kod buraya ulaştıysa hata çıkmamıştır, işlemleri kalıcı yap.
             await transaction.CommitAsync();
 
-            // Sadece örnek olsun diye basit bir Response dönüyoruz, 
-            // gerçekte Include() yapıp ilişkili verileri çekerek daha zengin Response yapabilirsin.
             var response = _mapper.Map<OrderResponseDto>(order);
-            /*var response = new OrderResponseDto(
-                order.Id,
-                order.CustomerId,
-                $"{customer.FirstName} {customer.LastName}",
-                order.OrderDate,
-                order.TotalAmount,
-                order.OrderItems.Select(oi => new OrderItemResponseDto(
-                    oi.ProductId,
-                    "Ürün", // Optimizasyon için geçici sabit isim
-                    oi.Quantity,
 
-                    oi.UnitPrice,
-                    oi.Quantity * oi.UnitPrice
-                )).ToList()
-            );*/
+            // Invalidate cache to update lists
+            if (_cache is Microsoft.Extensions.Caching.Memory.MemoryCache memoryCache)
+            {
+                memoryCache.Compact(1.0);
+            }
 
-            // Burada da 201 Created döndürüyoruz, tıpkı geçen derste öğrendiğimiz gibi.
             return CreatedAtAction(nameof(GetOrder), new { id = order.Id }, response);
         }
-        catch (Exception) // Hata olursa catch'e düşer
+        catch (Exception)
         {
-            await transaction.RollbackAsync(); // Hiçbir işlemi kaydetme, geri al!
-            throw; // Hatayı ExceptionMiddleware'e fırlat ki JSON mesajına çevirsin
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 
-    // Basit bir GET metodu ki CreatedAtAction kırılmasın.
     [HttpGet("{id}")]
     public async Task<ActionResult<OrderResponseDto>> GetOrder(int id)
     {
         var order = await _context.Orders
-            .Include(o => o.Customer)
+            .Include(o => o.User)
             .Include(o => o.OrderItems)
-                .ThenInclude(oi => oi.Product) // Zincirleme Include! (Satır -> Ürün bilgileri)
+                .ThenInclude(oi => oi.Product)
             .FirstOrDefaultAsync(o => o.Id == id);
 
         if (order == null)
             return NotFound();
 
         
-        var orderDto = _mapper.Map<OrderResponseDto>(order);        
-        /*var response = new OrderResponseDto(
-            order.Id,
-            order.CustomerId,
-            $"{order.Customer.FirstName} {order.Customer.LastName}",
-            order.OrderDate,
-            order.TotalAmount,
-            order.OrderItems.Select(oi => new OrderItemResponseDto(
-                oi.ProductId,
-                oi.Product.Name,
-                oi.Quantity,
-                oi.UnitPrice,
-                oi.Quantity * oi.UnitPrice
-            )).ToList()
-        );*/
+        var orderDto = _mapper.Map<OrderResponseDto>(order);
 
         return Ok(orderDto);
     }

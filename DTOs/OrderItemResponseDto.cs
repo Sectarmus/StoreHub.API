@@ -5,5 +5,5 @@ public record OrderItemResponseDto(
     string ProductName,
     int Quantity,
     decimal UnitPrice,
-    decimal TotalPrice // Quantity * UnitPrice
+    decimal TotalPrice
 );

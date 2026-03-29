@@ -5,5 +5,5 @@ public record CustomerResponseDto(
     string FirstName,
     string LastName,
     string Email,
-    string FullName // Ad ve soyadı birleştirip göndereceğiz.
+    string FullName
 );

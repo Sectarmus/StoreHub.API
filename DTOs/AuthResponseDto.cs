@@ -1,8 +1,8 @@
 namespace StoreHub.API.DTOs;
 
 public record AuthResponseDto(
-    string Token,        // Kimlik Kartı (JWT)
+    string Token,
     string Username,
     string Role,
-    DateTime Expiration  // Kartın süresi
+    DateTime Expiration
 );

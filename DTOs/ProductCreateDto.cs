@@ -5,5 +5,6 @@ public record ProductCreateDto(
 
     string Description,
     decimal Price,
-    int Stock
+    int Stock,
+    string Category
 );

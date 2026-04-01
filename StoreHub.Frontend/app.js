@@ -64,9 +64,11 @@ const app = {
         const authContainer = document.getElementById('auth-buttons');
         const ordersNav = document.getElementById('nav-orders');
         const adminProductsNav = document.getElementById('nav-admin-products');
+        const myOrdersNav = document.getElementById('nav-my-orders');
 
         if(this.state.token && this.state.user) {
             authContainer.innerHTML = `<button class="btn-secondary" onclick="app.logout()"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</button>`;
+            myOrdersNav.classList.remove('hidden');
             if(this.state.user.role === 'Admin') {
                 ordersNav.classList.remove('hidden');
                 adminProductsNav.classList.remove('hidden');
@@ -78,6 +80,7 @@ const app = {
             authContainer.innerHTML = `<button class="btn-primary" onclick="app.navigate('auth')"><i class="fa-solid fa-user"></i> Giriş / Kayıt</button>`;
             ordersNav.classList.add('hidden');
             adminProductsNav.classList.add('hidden');
+            myOrdersNav.classList.add('hidden');
         }
     },
 
@@ -96,6 +99,8 @@ const app = {
             this.loadProducts();
         } else if(view === 'orders') {
             this.loadOrders();
+        } else if(view === 'my-orders') {
+            this.loadMyOrders();
         } else if(view === 'admin-products') {
             this.populateCategoriesDropdown('admin-category');
             this.loadAdminProducts();
@@ -408,6 +413,40 @@ const app = {
             });
         } catch(e) {
             this.showToast('Siparişler yüklenemedi (Sadece Admin görebilir)', 'error');
+        }
+    },
+
+    // ================== MY ORDERS (USER) ==================
+    async loadMyOrders() {
+        try {
+            const res = await fetch(`${API_URL}/Orders/myorders`, {
+                headers: { 'Authorization': `Bearer ${this.state.token}` }
+            });
+            const data = await res.json();
+            const list = document.getElementById('my-orders-list');
+            list.innerHTML = '';
+            
+            if(data.length === 0) {
+                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">Henüz hiç siparişiniz yok.</td></tr>`;
+                return;
+            }
+
+            data.forEach(o => {
+                list.innerHTML += `
+                    <tr>
+                        <td>#${o.id}</td>
+                        <td>${new Date(o.orderDate).toLocaleDateString()}</td>
+                        <td style="color: #10b981; font-weight:bold;">${o.totalAmount} TL</td>
+                        <td>
+                            <button class="btn-primary" onclick='app.viewOrderDetails(${JSON.stringify(o).replace(/'/g, "\\'")})' style="padding: 0.3rem 0.5rem; font-size: 0.8rem;">
+                                <i class="fa-solid fa-eye"></i> Detay
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch(e) {
+            this.showToast('Siparişler yüklenemedi', 'error');
         }
     },
 

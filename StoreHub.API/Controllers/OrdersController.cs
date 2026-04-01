@@ -62,6 +62,27 @@ public class OrdersController : ControllerBase
         return Ok(response);
     }
 
+    // GET: api/orders/myorders (List orders for the current logged-in user)
+    [HttpGet("myorders")]
+    [Authorize]
+    public async Task<ActionResult<List<OrderResponseDto>>> GetMyOrders()
+    {
+        var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdString, out int userId))
+            return Unauthorized(new { message = "Please login first." });
+
+        var orders = await _context.Orders
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+            .AsNoTracking()
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.OrderDate)
+            .ToListAsync();
+
+        var orderDtos = _mapper.Map<List<OrderResponseDto>>(orders);
+
+        return Ok(orderDtos);
+    }
 
     [HttpPost]
     [HttpPost]

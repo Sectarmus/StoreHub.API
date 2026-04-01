@@ -19,9 +19,11 @@
         
         <div class="nav-links">
             <a href="#" onclick="app.navigate('home')" id="nav-home"><i class="fa-solid fa-house"></i> Vitrin</a>
+            <!-- Only shown if logged in -->
+            <a href="#" onclick="app.navigate('my-orders')" id="nav-my-orders" class="hidden"><i class="fa-solid fa-box-open"></i> Siparişlerim</a>
             <!-- Only shown if Admin -->
             <a href="#" onclick="app.navigate('admin-products')" id="nav-admin-products" class="hidden"><i class="fa-solid fa-gears"></i> Ürün Yönetimi</a>
-            <a href="#" onclick="app.navigate('orders')" id="nav-orders" class="hidden"><i class="fa-solid fa-clipboard-list"></i> Siparişler</a>
+            <a href="#" onclick="app.navigate('orders')" id="nav-orders" class="hidden"><i class="fa-solid fa-clipboard-list"></i> Tüm Siparişler</a>
         </div>
 
         <div class="nav-actions">
@@ -156,7 +158,31 @@
         </div>
     </template>
 
-    <!-- 4. ÜRÜN YÖNETİMİ (ADMIN) ŞABLONU -->
+    <!-- 4. SİPARİŞLERİM (KULLANICI) ŞABLONU -->
+    <template id="view-my-orders">
+        <div class="hero">
+            <h1>Geçmiş Siparişlerim</h1>
+            <p>Satın aldığınız tüm ürünleri buradan inceleyebilirsiniz.</p>
+        </div>
+        
+        <div class="glass-panel p-4">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Sipariş No</th>
+                        <th>Tarih</th>
+                        <th>Tutar</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="my-orders-list">
+                    <!-- SİPARİŞLER GELECEK -->
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <!-- 5. ÜRÜN YÖNETİMİ (ADMIN) ŞABLONU -->
     <template id="view-admin-products">
         <div class="hero">
             <h1>Ürün Yönetimi <span class="badge-admin">Admin Paneli</span></h1>

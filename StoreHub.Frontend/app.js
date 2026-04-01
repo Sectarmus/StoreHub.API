@@ -3,7 +3,7 @@ const API_URL = "https://storehub-alper.azurewebsites.net/api";
 const app = {
     state: {
         view: 'home',
-        cart: [],
+        cart: JSON.parse(localStorage.getItem('cart')) || [],
         token: localStorage.getItem('token') || null,
         user: null,
         productParams: {
@@ -26,6 +26,7 @@ const app = {
         }
         await this.fetchCategories();
         this.renderNav();
+        this.updateCartCount();
         this.navigate('home');
     },
 
@@ -226,11 +227,20 @@ const app = {
         } else {
             this.state.cart.push({ productId: id, name, price, quantity: 1 });
         }
+        this.saveCart();
         this.renderCart();
         this.showToast(`${name} sepete eklendi!`, 'success');
-        
+        this.updateCartCount();
+    },
+
+    saveCart() {
+        localStorage.setItem('cart', JSON.stringify(this.state.cart));
+    },
+
+    updateCartCount() {
         const count = this.state.cart.reduce((a,b) => a + b.quantity, 0);
-        document.getElementById('cart-count').innerText = count;
+        const el = document.getElementById('cart-count');
+        if(el) el.innerText = count;
     },
 
     renderCart() {
@@ -283,7 +293,8 @@ const app = {
 
             this.showToast('Sipariş Başarıyla Oluşturuldu! (Transaction Mimarisi Kullanıldı)', 'success');
             this.state.cart = [];
-            document.getElementById('cart-count').innerText = '0';
+            this.saveCart();
+            this.updateCartCount();
             this.toggleCart();
 
         } catch(e) {
@@ -359,7 +370,8 @@ const app = {
         
         // Sepeti sıfırla (Sadece kişiye özel sepete geçiş yapıyoruz)
         this.state.cart = [];
-        document.getElementById('cart-count').innerText = '0';
+        this.saveCart();
+        this.updateCartCount();
         this.renderCart();
 
         this.renderNav();

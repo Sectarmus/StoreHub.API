@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoreHub Elite | Modern E-Ticaret Deneyimi</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- NAVBAR (Glassmorphism) -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fa-solid fa-cube text-gradient"></i> 
+            <span class="text-gradient">StoreHub</span>
+        </div>
+        
+        <div class="nav-links">
+            <a href="#" onclick="app.navigate('home')" id="nav-home"><i class="fa-solid fa-house"></i> Vitrin</a>
+            <!-- Only shown if Admin -->
+            <a href="#" onclick="app.navigate('admin-products')" id="nav-admin-products" class="hidden"><i class="fa-solid fa-gears"></i> Ürün Yönetimi</a>
+            <a href="#" onclick="app.navigate('orders')" id="nav-orders" class="hidden"><i class="fa-solid fa-clipboard-list"></i> Siparişler</a>
+        </div>
+
+        <div class="nav-actions">
+            <button onclick="app.toggleCart()" class="cart-btn">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span id="cart-count">0</span>
+            </button>
+            <div id="auth-buttons">
+                <!-- JS will inject Login or Profile button here -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- KÜÇÜK TOAST BİLDİRİMLERİ İÇİN (Hata, Başarı vs.) -->
+    <div id="toast-container"></div>
+
+    <!-- SEPET ÇEKMECESİ (Sidebar) -->
+    <div id="cart-sidebar" class="sidebar">
+        <div class="sidebar-header">
+            <h2>Sepetim</h2>
+            <button onclick="app.toggleCart()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="sidebar-content" id="cart-items">
+            <!-- JS will inject cart items -->
+        </div>
+        <div class="sidebar-footer">
+            <div class="total">Ara Toplam: <span id="cart-total">0.00 TL</span></div>
+            <button class="btn-primary" onclick="app.checkout()">Siparişi Tamamla <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- ANA İÇERİK (Routelara göre değişir) -->
+    <main id="app-content">
+        <!-- VIEWS WILL BE RENDERED HERE -->
+    </main>
+
+    <!-- GİZLİ VİEW ŞABLONLARI (Single Page App Mantığı) -->
+    
+    <!-- 1. VİTRİN ŞABLONU -->
+    <template id="view-home">
+        <div class="hero">
+            <h1>Hoş Geldin, <span id="welcome-name" class="text-gradient">Misafir</span></h1>
+            <p>En yeni ürünleri en hızlı önbellek (Caching) altyapısıyla jet hızında keşfet!</p>
+        </div>
+
+        <!-- Filtreleme ve Arama -->
+        <div class="filter-bar glass-panel">
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-input" placeholder="Ne aramıştınız? (Klavye, Mouse..)" onkeyup="app.handleSearch(event)">
+            </div>
+            <div class="price-filters" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <select id="home-category" class="glass-input" onchange="app.handleCategoryChange(event)">
+                    <option value="">Tüm Kategoriler</option>
+                    <!-- KATEGORİLER GELECEK -->
+                </select>
+                <input type="number" id="min-price" placeholder="Min TL">
+                <input type="number" id="max-price" placeholder="Max TL">
+                <button class="btn-secondary" onclick="app.applyFilters()">Filtrele</button>
+            </div>
+        </div>
+
+        <!-- Yükleniyor Uyarısı / Hız Göstergesi -->
+        <div id="api-speed-monitor" class="speed-monitor hidden"></div>
+
+        <div class="product-grid" id="product-list">
+            <!-- ÜRÜNLER GELECEK -->
+        </div>
+
+        <!-- Sayfalama (Pagination) -->
+        <div class="pagination glass-panel" id="pagination">
+            <button onclick="app.changePage(-1)" id="btn-prev"><i class="fa-solid fa-angle-left"></i> Önceki</button>
+            <span id="page-info">Sayfa 1 / 1</span>
+            <button onclick="app.changePage(1)" id="btn-next">Sonraki <i class="fa-solid fa-angle-right"></i></button>
+        </div>
+    </template>
+
+    <!-- 2. LOGIN / REGISTER ŞABLONU -->
+    <template id="view-auth">
+        <div class="auth-wrapper">
+            <div class="auth-card glass-panel">
+                <h2 id="auth-title">Giriş Yap</h2>
+                <form id="auth-form" onsubmit="app.handleAuth(event)">
+                    
+                    <div class="input-group hidden" id="group-email">
+                        <label>E-Posta</label>
+                        <input type="email" id="auth-email">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Kullanıcı Adı</label>
+                        <input type="text" id="auth-username" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Şifre</label>
+                        <input type="password" id="auth-password" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary" id="auth-submit">Giriş Yap</button>
+                </form>
+                <div class="auth-switch">
+                    <span id="auth-switch-text">Hesabın yok mu?</span>
+                    <a href="#" onclick="app.toggleAuthMode()">Kayıt Ol</a>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 3. SİPARİŞLER (ADMIN) ŞABLONU -->
+    <template id="view-orders">
+        <div class="hero">
+            <h1>Siparişler <span class="badge-admin">Admin Paneli</span></h1>
+            <p>Tüm müşteri siparişlerini ve transaction geçmişini incele.</p>
+        </div>
+        
+        <div class="glass-panel p-4">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Sipariş No</th>
+                        <th>Müşteri (ID)</th>
+                        <th>Tarih</th>
+                        <th>Tutar</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="orders-list">
+                    <!-- SİPARİŞLER GELECEK -->
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <!-- 4. ÜRÜN YÖNETİMİ (ADMIN) ŞABLONU -->
+    <template id="view-admin-products">
+        <div class="hero">
+            <h1>Ürün Yönetimi <span class="badge-admin">Admin Paneli</span></h1>
+            <p>Ürün ekleme, düzenleme ve stok kontrolü.</p>
+            <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+                <select id="admin-category" class="glass-input" style="max-width: 250px;" onchange="app.handleAdminCategoryChange(event)">
+                    <option value="">Tüm Kategoriler</option>
+                    <!-- KATEGORİLER GELECEK -->
+                </select>
+                <button class="btn-primary" onclick="app.openProductModal()">
+                    <i class="fa-solid fa-plus"></i> Yeni Ürün Ekle
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-panel p-4">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th>Görsel</th>
+                        <th>Ürün Adı</th>
+                        <th>Kategori</th>
+                        <th>Fiyat</th>
+                        <th>Stok</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-product-list">
+                    <!-- ÜRÜNLER GELECEK -->
+                </tbody>
+            </table>
+        </div>
+    </template>
+
+    <!-- ÜRÜN EKLEMA/DÜZENLEME MODAL -->
+    <div id="product-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="modal-title">Ürün Düzenle</h2>
+                <button onclick="app.closeProductModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="product-form" onsubmit="app.saveProduct(event)">
+                    <input type="hidden" id="edit-product-id">
+                    <div class="input-group">
+                        <label>Ürün Adı</label>
+                        <input type="text" id="p-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Açıklama</label>
+                        <textarea id="p-desc" class="glass-input" rows="3" required></textarea>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Kategori</label>
+                            <input type="text" id="p-category" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Fiyat (TL)</label>
+                            <input type="number" id="p-price" step="0.01" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Stok</label>
+                            <input type="number" id="p-stock" required>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Ürün Görseli (Upload)</label>
+                        <input type="file" id="p-image" accept="image/*" onchange="app.handleImagePreview(event)">
+                        <div id="image-preview" class="image-preview-box">
+                            <!-- Preview Image -->
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" onclick="app.closeProductModal()">İptal</button>
+                        <button type="submit" class="btn-primary" id="save-btn">Kaydet</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SİPARİŞ DETAY MODAL -->
+    <div id="order-details-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2 id="order-modal-title">Sipariş Detayı (#..)</h2>
+                <button onclick="app.closeOrderModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th>Ürün ID</th>
+                            <th>Ürün Adı</th>
+                            <th>Adet</th>
+                            <th>Birim Fiyat</th>
+                            <th>Toplam Fiyat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="order-items-list">
+                        <!-- SİPARİŞ KALEMLERİ GELECEK -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer" style="justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 1rem;">
+                <strong>Genel Toplam: <span id="order-modal-total" style="color: #10b981;">0.00 TL</span></strong>
+                <button type="button" class="btn-secondary" onclick="app.closeOrderModal()">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>

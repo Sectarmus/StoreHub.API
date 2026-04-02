@@ -274,6 +274,11 @@ const app = {
         }
         if(this.state.cart.length === 0) return this.showToast('Sepetiniz boş!', 'error');
 
+        const btn = document.getElementById('checkout-btn');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> İşleniyor...';
+
         try {
             const res = await fetch(`${API_URL}/Orders`, {
                 method: 'POST',
@@ -299,6 +304,9 @@ const app = {
 
         } catch(e) {
             this.showToast(e.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     },
 

@@ -85,7 +85,6 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPost]
-    [HttpPost]
     [Authorize]
     public async Task<ActionResult<OrderResponseDto>> CreateOrder(OrderCreateDto dto)
     {
@@ -93,6 +92,14 @@ public class OrdersController : ControllerBase
         var userIdString = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         if (!int.TryParse(userIdString, out int userId))
             return Unauthorized(new { message = "Please login first." });
+
+        // Idempotency check: Prevent duplicate orders from same user within 10 seconds
+        string idempotencyKey = $"last_order_{userId}";
+        if (_cache.TryGetValue(idempotencyKey, out _))
+            return BadRequest(new { message = "Siparişiniz zaten işleniyor veya çok yeni bir siparişiniz var. Lütfen 10 saniye bekleyin." });
+            
+        // Set lock for 10 seconds
+        _cache.Set(idempotencyKey, true, TimeSpan.FromSeconds(10));
 
         using var transaction = await _context.Database.BeginTransactionAsync();
 

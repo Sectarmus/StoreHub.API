@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="assets/logo.png" alt="StoreHub Logo" width="200"/>
   <h1>🏪 StoreHub</h1>
   <p><strong>A Modern & Secure E-Commerce Full-Stack Solution</strong></p>
 
@@ -13,13 +12,6 @@
 
 ## 🚀 About the Project
 **StoreHub** is a comprehensive e-commerce platform designed with scalability, security, and a premium user experience in mind. It consists of a robust **ASP.NET Core 10** backend and a sleek, modern **Vanilla JS** frontend. This project demonstrates modern software architecture patterns like DTOs, Repository-like behavior (EF Core), Global Exception Handling, and more.
-
-### ✨ Preview
-<div align="center">
-  <img src="assets/preview.png" alt="StoreHub Preview" width="800"/>
-</div>
-
----
 
 ## 🛠️ Tech Stack & Key Features
 

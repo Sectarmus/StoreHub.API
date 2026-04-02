@@ -1,35 +1,127 @@
-StoreHub.API
-StoreHub.API is a comprehensive E-Commerce REST API developed using C# and .NET 10. The project integrates modern software architecture concepts to provide high scalability, performance, and security.
+<div align="center">
+  <img src="assets/logo.png" alt="StoreHub Logo" width="200"/>
+  <h1>🏪 StoreHub</h1>
+  <p><strong>A Modern & Secure E-Commerce Full-Stack Solution</strong></p>
 
-Features & Architecture
-This application is built with modern Web API development practices, including:
+  [![.NET 10](https://img.shields.io/badge/.NET-10.0-512bd4?logo=dotnet)](https://dotnet.microsoft.com/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Database & ORM: Powered by PostgreSQL and Entity Framework Core (Code First approach). Employs AsNoTracking() for optimal data retrieval operations.
-Security & Authentication: Role-based Authorization secured by JWT (JSON Web Token), with secure password hashing via BCrypt.
-Data Integrity & Validation:
-End-to-end data validation utilizing FluentValidation pipelines.
-Controlled client-server interactions using the DTO (Data Transfer Object) pattern, mapped efficiently via AutoMapper.
-Financial and order management operations are safely wrapped inside database transactions (BeginTransactionAsync) to guarantee data sequence integrity.
-Error Handling: Features a robust, centralized Global Exception Middleware, eliminating redundant try-catch blocks and returning standardized JSON error objects across the application.
-Media Management: Built-in secure file upload service specifically designed for handling product imagery.
-Performance: Uses memory caching strategies (IMemoryCache) to reduce repetitive database queries for continuous product and order listings.
-Getting Started
-Follow these instructions to run the project locally.
+  ---
+</div>
 
-Prerequisites
-.NET 10 SDK
-PostgreSQL
-Installation
-Clone the repository to your local machine.
-Configure your appsettings.json file by updating the DefaultConnection connection string to point to your PostgreSQL instance.
-Open your terminal in the StoreHub.API directory and run:
-# Clean the project (Optional)
-dotnet clean
+## 🚀 About the Project
+**StoreHub** is a comprehensive e-commerce platform designed with scalability, security, and a premium user experience in mind. It consists of a robust **ASP.NET Core 10** backend and a sleek, modern **Vanilla JS** frontend. This project demonstrates modern software architecture patterns like DTOs, Repository-like behavior (EF Core), Global Exception Handling, and more.
 
-# Apply entity framework migrations to your database
-dotnet ef database update
+### ✨ Preview
+<div align="center">
+  <img src="assets/preview.png" alt="StoreHub Preview" width="800"/>
+</div>
 
-# Run the application
-dotnet run
-Once the application is running, navigate to the local endpoint to view the scalar interactive API documentation and test the routes directly.
-Developed by Alper (Sectarmus)
+---
+
+## 🛠️ Tech Stack & Key Features
+
+### Backend (`StoreHub.API`)
+*   **Framework:** .NET 10 (ASP.NET Core Web API)
+*   **Database:** PostgreSQL with **Entity Framework Core** (Code-First)
+*   **Security:** Role-based Authorization with **JWT** (JSON Web Tokens) and secure password hashing via `BCrypt`.
+*   **Documentation:** Interactive API docs using **Scalar** (OpenAPI 3.1).
+*   **Data Integrity:** 
+    *   Strict input validation through **FluentValidation** pipelines.
+    *   Clean decoupling using **DTO (Data Transfer Object)** pattern with **AutoMapper**.
+    *   ACID-compliant transactions for order processing.
+*   **Performance:** Memory caching strategies (`IMemoryCache`) for lightning-fast catalog browsing.
+*   **Architecture:** Centralized **Global Exception Middleware** for consistent error reporting.
+
+### Frontend (`StoreHub.Frontend`)
+*   **Engine:** Modern HTML5 / CSS3 / Vanilla JavaScript.
+*   **UI/UX:** Premium **Glassmorphism** design, responsive layouts, and smooth micro-animations.
+*   **Integration:** Real-time communication with the backend API via `fetch` API.
+*   **Persistence:** Local storage synchronization for shopping basket and session management.
+
+---
+
+## 📂 Project Structure
+```text
+StoreHub/
+├── StoreHub.API/          # ASP.NET Core 10 Backend
+│   ├── Controllers/       # API View-Models/Controllers
+│   ├── Data/              # DbContext & Database configuration
+│   ├── DTOs/              # Data Transfer Objects for Client-Server decoupling
+│   ├── Middlewares/       # Exception Handling & Custom logic
+│   └── Properties/        # Launch settings
+├── StoreHub.Frontend/     # Modern Vanilla JS Frontend
+│   ├── index.html         # Main Entry point
+│   ├── style.css          # Premium Custom Styling
+│   └── app.js             # Frontend Logic & API Integration
+├── assets/                # README images & Resources
+└── docker-compose.yml     # Container Orchestration
+```
+
+---
+
+## ⚙️ Getting Started
+
+### Prerequisites
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [PostgreSQL](https://www.postgresql.org/)
+- [Docker](https://www.docker.com/products/docker-desktop) (Optional - for containerized setup)
+
+### Local Development Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Sectarmus/StoreHub.git
+   cd StoreHub
+   ```
+
+2. **Backend Configuration:**
+   - Update the connection string in `StoreHub.API/appsettings.json`:
+     ```json
+     "ConnectionStrings": {
+       "DefaultConnection": "Host=localhost;Database=StoreHubDb;Username=postgres;Password=your_password"
+     }
+     ```
+   - Apply database migrations:
+     ```bash
+     cd StoreHub.API
+     dotnet ef database update
+     ```
+
+3. **Run the API:**
+   ```bash
+   dotnet run
+   ```
+   *Access API Docs at: `http://localhost:5000/scalar/v1`*
+
+4. **Frontend Configuration:**
+   - Open `StoreHub.Frontend/index.html` in your browser. (The script automatically connects to the backend on `localhost:5000`).
+
+---
+
+## 🐳 Docker Deployment
+You can run the entire stack (API, DB, and Web Server) using Docker:
+```bash
+docker-compose up --build
+```
+
+---
+
+## 🛡️ Security Features
+- **JWT Authn/Authz**: Secure token-based access control.
+- **CORS Policies**: Restricted origins for production-grade security.
+- **Hashing**: `BCrypt` hashing for all sensitive user credentials.
+- **Sanitization**: Automated input cleanup via FluentValidation.
+
+---
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE).
+
+## 👨‍💻 Developed By
+**Alper (Sectarmus)**
+
+---
+<p align="center">Made with ❤️ for modern e-commerce scalability.</p>

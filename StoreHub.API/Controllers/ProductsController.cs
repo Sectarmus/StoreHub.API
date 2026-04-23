@@ -35,7 +35,7 @@ public class ProductsController : ControllerBase
 
         var response = await _cache.GetOrCreateAsync(cacheKey, async entry =>
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
             var query = _context.Products.AsNoTracking().AsQueryable();
 

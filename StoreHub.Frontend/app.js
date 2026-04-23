@@ -139,12 +139,12 @@ const app = {
             const end = performance.now();
             const speed = (end - start).toFixed(2);
 
-            if(speed < 15) {
+            if(speed < 40) { // Ağ gecikmesi dahil cache hızı genellikle 40ms altındadır
                 monitor.className = 'speed-monitor speed-cache';
-                monitor.innerHTML = `⚡ IMemoryCache Kullanıldı! Hız: ${speed}ms (DB Yorulmadı)`;
+                monitor.innerHTML = `⚡ IMemoryCache Kullanıldı! Hız: ${speed}ms`;
             } else {
                 monitor.className = 'speed-monitor speed-db';
-                monitor.innerHTML = `🐌 Veritabanından Çekildi. Hız: ${speed}ms (Sonraki F5'lerde hızı gör!)`;
+                monitor.innerHTML = `🐌 Veritabanından Çekildi. Hız: ${speed}ms`;
             }
 
             const grid = document.getElementById('product-list');

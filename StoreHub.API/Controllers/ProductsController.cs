@@ -33,10 +33,8 @@ public class ProductsController : ControllerBase
     {
         string cacheKey = $"products_{productParams.PageNumber}_{productParams.PageSize}_{productParams.Search}_{productParams.MinPrice}_{productParams.MaxPrice}_{productParams.Category}";
 
-        var response = await _cache.GetOrCreateAsync(cacheKey, async entry =>
+        if (!_cache.TryGetValue(cacheKey, out PagedResponse<ProductResponseDto>? response))
         {
-            entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-
             var query = _context.Products.AsNoTracking().AsQueryable();
 
             if (!string.IsNullOrEmpty(productParams.Search))
@@ -60,10 +58,16 @@ public class ProductsController : ControllerBase
 
             var productDtos = _mapper.Map<List<ProductResponseDto>>(products);
 
-            return new PagedResponse<ProductResponseDto>(
-                productDtos, totalCount, productParams.PageNumber, productParams.PageSize
+            response = new PagedResponse<ProductResponseDto>(
+                productDtos, totalCount, productParams.PageNumber, productParams.PageSize, fromCache: false
             );
-        });
+
+            _cache.Set(cacheKey, response, TimeSpan.FromMinutes(10));
+        }
+        else
+        {
+            response!.FromCache = true;
+        }
 
         return Ok(response);
     }

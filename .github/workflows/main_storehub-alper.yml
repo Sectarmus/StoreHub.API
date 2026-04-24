@@ -23,11 +23,6 @@ jobs:
         with:
           dotnet-version: '10.x'
 
-      - name: Copy frontend to wwwroot
-        run: |
-          mkdir -p StoreHub.API/wwwroot
-          cp -rv StoreHub.Frontend/. StoreHub.API/wwwroot/
-
       - name: Build with dotnet
         run: dotnet build --configuration Release
         working-directory: StoreHub.API

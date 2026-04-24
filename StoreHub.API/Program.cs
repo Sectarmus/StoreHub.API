@@ -60,6 +60,8 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddOpenApi();
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
@@ -82,6 +84,8 @@ app.UseAuthorization();
 app.MapScalarApiReference();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
+
 
 // Apply migrations and seed data at startup
 using (var scope = app.Services.CreateScope())

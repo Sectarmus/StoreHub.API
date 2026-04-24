@@ -15,7 +15,10 @@ const app = {
             category: ''
         },
         adminProductParams: {
-            category: ''
+            category: '',
+            search: '',
+            sortBy: '',
+            sortDesc: false
         },
         categories: []
     },
@@ -301,7 +304,7 @@ const app = {
                 throw new Error(err.message || "Stok yetersiz veya hata oluştu");
             }
 
-            this.showToast('Sipariş Başarıyla Oluşturuldu! (Transaction Mimarisi Kullanıldı)', 'success');
+            this.showToast('Sipariş Başarıyla Oluşturuldu!', 'success');
             this.state.cart = [];
             this.saveCart();
             this.updateCartCount();
@@ -496,13 +499,32 @@ const app = {
             if (this.state.adminProductParams.category) {
                 url += `&Category=${encodeURIComponent(this.state.adminProductParams.category)}`;
             }
+            if (this.state.adminProductParams.search) {
+                url += `&Search=${encodeURIComponent(this.state.adminProductParams.search)}`;
+            }
             
             const res = await fetch(url);
             const data = await res.json();
             const list = document.getElementById('admin-product-list');
             list.innerHTML = '';
             
-            const items = data.items || data;
+            let items = data.items || data;
+
+            if (this.state.adminProductParams.sortBy) {
+                const col = this.state.adminProductParams.sortBy;
+                const desc = this.state.adminProductParams.sortDesc ? -1 : 1;
+                items.sort((a, b) => {
+                    let valA = a[col] || '';
+                    let valB = b[col] || '';
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    
+                    if (valA < valB) return -1 * desc;
+                    if (valA > valB) return 1 * desc;
+                    return 0;
+                });
+            }
+
             items.forEach(p => {
                 const imgSource = p.imageUrl 
                     ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
@@ -535,6 +557,21 @@ const app = {
 
     handleAdminCategoryChange(e) {
         this.state.adminProductParams.category = e.target.value;
+        this.loadAdminProducts();
+    },
+
+    handleAdminSearch(e) {
+        this.state.adminProductParams.search = e.target.value;
+        this.loadAdminProducts();
+    },
+
+    sortAdminProducts(column) {
+        if (this.state.adminProductParams.sortBy === column) {
+            this.state.adminProductParams.sortDesc = !this.state.adminProductParams.sortDesc;
+        } else {
+            this.state.adminProductParams.sortBy = column;
+            this.state.adminProductParams.sortDesc = false;
+        }
         this.loadAdminProducts();
     },
 

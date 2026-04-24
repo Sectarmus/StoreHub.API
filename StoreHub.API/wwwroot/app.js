@@ -15,7 +15,10 @@ const app = {
             category: ''
         },
         adminProductParams: {
-            category: ''
+            category: '',
+            search: '',
+            sortBy: '',
+            sortDesc: false
         },
         categories: []
     },
@@ -64,9 +67,11 @@ const app = {
         const authContainer = document.getElementById('auth-buttons');
         const ordersNav = document.getElementById('nav-orders');
         const adminProductsNav = document.getElementById('nav-admin-products');
+        const myOrdersNav = document.getElementById('nav-my-orders');
 
         if(this.state.token && this.state.user) {
             authContainer.innerHTML = `<button class="btn-secondary" onclick="app.logout()"><i class="fa-solid fa-right-from-bracket"></i> Çıkış Yap</button>`;
+            myOrdersNav.classList.remove('hidden');
             if(this.state.user.role === 'Admin') {
                 ordersNav.classList.remove('hidden');
                 adminProductsNav.classList.remove('hidden');
@@ -78,6 +83,7 @@ const app = {
             authContainer.innerHTML = `<button class="btn-primary" onclick="app.navigate('auth')"><i class="fa-solid fa-user"></i> Giriş / Kayıt</button>`;
             ordersNav.classList.add('hidden');
             adminProductsNav.classList.add('hidden');
+            myOrdersNav.classList.add('hidden');
         }
     },
 
@@ -96,6 +102,8 @@ const app = {
             this.loadProducts();
         } else if(view === 'orders') {
             this.loadOrders();
+        } else if(view === 'my-orders') {
+            this.loadMyOrders();
         } else if(view === 'admin-products') {
             this.populateCategoriesDropdown('admin-category');
             this.loadAdminProducts();
@@ -296,7 +304,7 @@ const app = {
                 throw new Error(err.message || "Stok yetersiz veya hata oluştu");
             }
 
-            this.showToast('Sipariş Başarıyla Oluşturuldu! (Transaction Mimarisi Kullanıldı)', 'success');
+            this.showToast('Sipariş Başarıyla Oluşturuldu!', 'success');
             this.state.cart = [];
             this.saveCart();
             this.updateCartCount();
@@ -419,6 +427,40 @@ const app = {
         }
     },
 
+    // ================== MY ORDERS (USER) ==================
+    async loadMyOrders() {
+        try {
+            const res = await fetch(`${API_URL}/Orders/myorders`, {
+                headers: { 'Authorization': `Bearer ${this.state.token}` }
+            });
+            const data = await res.json();
+            const list = document.getElementById('my-orders-list');
+            list.innerHTML = '';
+            
+            if(data.length === 0) {
+                list.innerHTML = `<tr><td colspan="4" style="text-align:center;">Henüz hiç siparişiniz yok.</td></tr>`;
+                return;
+            }
+
+            data.forEach(o => {
+                list.innerHTML += `
+                    <tr>
+                        <td>#${o.id}</td>
+                        <td>${new Date(o.orderDate).toLocaleDateString()}</td>
+                        <td style="color: #10b981; font-weight:bold;">${o.totalAmount} TL</td>
+                        <td>
+                            <button class="btn-primary" onclick='app.viewOrderDetails(${JSON.stringify(o).replace(/'/g, "\\'")})' style="padding: 0.3rem 0.5rem; font-size: 0.8rem;">
+                                <i class="fa-solid fa-eye"></i> Detay
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch(e) {
+            this.showToast('Siparişler yüklenemedi', 'error');
+        }
+    },
+
     viewOrderDetails(order) {
         document.getElementById('order-modal-title').innerText = `Sipariş Detayı (#${order.id})`;
         document.getElementById('order-modal-total').innerText = `${order.totalAmount} TL`;
@@ -457,13 +499,32 @@ const app = {
             if (this.state.adminProductParams.category) {
                 url += `&Category=${encodeURIComponent(this.state.adminProductParams.category)}`;
             }
+            if (this.state.adminProductParams.search) {
+                url += `&Search=${encodeURIComponent(this.state.adminProductParams.search)}`;
+            }
             
             const res = await fetch(url);
             const data = await res.json();
             const list = document.getElementById('admin-product-list');
             list.innerHTML = '';
             
-            const items = data.items || data;
+            let items = data.items || data;
+
+            if (this.state.adminProductParams.sortBy) {
+                const col = this.state.adminProductParams.sortBy;
+                const desc = this.state.adminProductParams.sortDesc ? -1 : 1;
+                items.sort((a, b) => {
+                    let valA = a[col] || '';
+                    let valB = b[col] || '';
+                    if (typeof valA === 'string') valA = valA.toLowerCase();
+                    if (typeof valB === 'string') valB = valB.toLowerCase();
+                    
+                    if (valA < valB) return -1 * desc;
+                    if (valA > valB) return 1 * desc;
+                    return 0;
+                });
+            }
+
             items.forEach(p => {
                 const imgSource = p.imageUrl 
                     ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
@@ -496,6 +557,21 @@ const app = {
 
     handleAdminCategoryChange(e) {
         this.state.adminProductParams.category = e.target.value;
+        this.loadAdminProducts();
+    },
+
+    handleAdminSearch(e) {
+        this.state.adminProductParams.search = e.target.value;
+        this.loadAdminProducts();
+    },
+
+    sortAdminProducts(column) {
+        if (this.state.adminProductParams.sortBy === column) {
+            this.state.adminProductParams.sortDesc = !this.state.adminProductParams.sortDesc;
+        } else {
+            this.state.adminProductParams.sortBy = column;
+            this.state.adminProductParams.sortDesc = false;
+        }
         this.loadAdminProducts();
     },
 

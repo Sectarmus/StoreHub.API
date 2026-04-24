@@ -12,7 +12,7 @@
 
     <!-- NAVBAR (Glassmorphism) -->
     <nav class="navbar">
-        <div class="logo">
+        <div class="logo" onclick="app.navigate('home')" style="cursor: pointer;">
             <i class="fa-solid fa-cube text-gradient"></i> 
             <span class="text-gradient">StoreHub</span>
         </div>
@@ -73,7 +73,7 @@
         <div class="filter-bar glass-panel">
             <div class="search-box">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="search-input" placeholder="Ne aramıştınız? (Klavye, Mouse..)" onkeyup="app.handleSearch(event)">
+                <input type="text" id="search-input" placeholder="Ne aramıştınız?" onkeyup="app.handleSearch(event)">
             </div>
             <div class="price-filters" style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <select id="home-category" class="glass-input" onchange="app.handleCategoryChange(event)">
@@ -192,6 +192,10 @@
                     <option value="">Tüm Kategoriler</option>
                     <!-- KATEGORİLER GELECEK -->
                 </select>
+                <div class="search-box" style="margin: 0;">
+                    <i class="fa-solid fa-magnifying-glass" style="position: absolute; margin-left: 10px; margin-top: 12px; color: #aaa;"></i>
+                    <input type="text" id="admin-search-input" class="glass-input" placeholder="Ürün ara..." onkeyup="app.handleAdminSearch(event)" style="padding-left: 35px; max-width: 250px;">
+                </div>
                 <button class="btn-primary" onclick="app.openProductModal()">
                     <i class="fa-solid fa-plus"></i> Yeni Ürün Ekle
                 </button>
@@ -203,9 +207,9 @@
                 <thead>
                     <tr>
                         <th>Görsel</th>
-                        <th>Ürün Adı</th>
-                        <th>Kategori</th>
-                        <th>Fiyat</th>
+                        <th onclick="app.sortAdminProducts('name')" style="cursor:pointer">Ürün Adı <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="app.sortAdminProducts('category')" style="cursor:pointer">Kategori <i class="fa-solid fa-sort"></i></th>
+                        <th onclick="app.sortAdminProducts('price')" style="cursor:pointer">Fiyat <i class="fa-solid fa-sort"></i></th>
                         <th>Stok</th>
                         <th>İşlemler</th>
                     </tr>

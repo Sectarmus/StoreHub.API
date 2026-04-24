@@ -116,10 +116,10 @@ public class OrdersController : ControllerBase
             {
                 var product = await _context.Products.FindAsync(itemDto.ProductId);
                 if (product == null)
-                    return NotFound(new { message = $"Product with ID {itemDto.ProductId} not found." });
+                    return NotFound(new { message = $"{itemDto.ProductId} ID'li ürün bulunamadı." });
 
                 if (product.Stock < itemDto.Quantity)
-                    return BadRequest(new { message = $"Not enough stock for {product.Name}. Remaining: {product.Stock}" });
+                    return BadRequest(new { message = $"{product.Name} için yeterli stok yok. Kalan stok: {product.Stock}" });
 
                 product.Stock -= itemDto.Quantity;
 

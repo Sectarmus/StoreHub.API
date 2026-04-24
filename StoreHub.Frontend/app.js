@@ -337,17 +337,46 @@ const app = {
             const subtotal = item.price * item.quantity;
             total += subtotal;
             list.innerHTML += `
-                <div class="cart-item">
-                    <div>
+                <div class="cart-item" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px;">
+                    <div style="flex: 1;">
                         <strong>${item.name}</strong><br>
                         <small>${item.price} TL x ${item.quantity}</small>
                     </div>
-                    <strong>${subtotal.toFixed(2)} TL</strong>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button class="btn-secondary" onclick="app.updateCartItem(${item.productId}, -1)" style="padding: 2px 8px; font-size: 1rem;">-</button>
+                        <span style="min-width: 15px; text-align: center;">${item.quantity}</span>
+                        <button class="btn-secondary" onclick="app.updateCartItem(${item.productId}, 1)" style="padding: 2px 8px; font-size: 1rem;">+</button>
+                    </div>
+                    <div style="margin-left: 15px; width: 80px; text-align: right;">
+                        <strong>${subtotal.toFixed(2)} TL</strong>
+                    </div>
+                    <button class="btn-secondary" onclick="app.removeCartItem(${item.productId})" title="Ürünü Çıkar" style="margin-left: 10px; color: #ef4444; border: none; background: transparent; padding: 5px; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
         });
 
         document.getElementById('cart-total').innerText = total.toFixed(2) + " TL";
+    },
+
+    updateCartItem(id, change) {
+        const item = this.state.cart.find(i => i.productId === id);
+        if (item) {
+            item.quantity += change;
+            if (item.quantity <= 0) {
+                this.removeCartItem(id);
+                return;
+            }
+        }
+        this.saveCart();
+        this.renderCart();
+        this.updateCartCount();
+    },
+
+    removeCartItem(id) {
+        this.state.cart = this.state.cart.filter(i => i.productId !== id);
+        this.saveCart();
+        this.renderCart();
+        this.updateCartCount();
     },
 
     async checkout() {

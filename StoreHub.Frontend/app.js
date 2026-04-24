@@ -503,7 +503,9 @@ const app = {
                 url += `&Search=${encodeURIComponent(this.state.adminProductParams.search)}`;
             }
             
-            const res = await fetch(url);
+            const res = await fetch(url, {
+                headers: { 'Authorization': `Bearer ${this.state.token}` }
+            });
             const data = await res.json();
             const list = document.getElementById('admin-product-list');
             list.innerHTML = '';

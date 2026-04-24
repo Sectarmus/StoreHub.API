@@ -33,7 +33,9 @@ public class ProductsController : ControllerBase
     {
         string cacheKey = $"products_{productParams.PageNumber}_{productParams.PageSize}_{productParams.Search}_{productParams.MinPrice}_{productParams.MaxPrice}_{productParams.Category}";
 
-        if (!_cache.TryGetValue(cacheKey, out PagedResponse<ProductResponseDto>? response))
+        bool skipCache = User.Identity?.IsAuthenticated == true && User.IsInRole("Admin");
+
+        if (skipCache || !_cache.TryGetValue(cacheKey, out PagedResponse<ProductResponseDto>? response))
         {
             var query = _context.Products.AsNoTracking().AsQueryable();
 
@@ -62,7 +64,10 @@ public class ProductsController : ControllerBase
                 productDtos, totalCount, productParams.PageNumber, productParams.PageSize, fromCache: false
             );
 
-            _cache.Set(cacheKey, response, TimeSpan.FromMinutes(10));
+            if (!skipCache)
+            {
+                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(10));
+            }
         }
         else
         {

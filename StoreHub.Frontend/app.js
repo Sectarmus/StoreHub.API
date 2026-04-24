@@ -246,8 +246,21 @@ const app = {
     addQuantityToCart(id, name, price) {
         const qtyInput = document.getElementById('detail-qty');
         const qty = parseInt(qtyInput.value) || 1;
+        const maxStock = parseInt(qtyInput.max) || 0;
         
+        if (qty > maxStock) {
+            this.showToast(`Maksimum ${maxStock} adet ekleyebilirsiniz.`, 'error');
+            return;
+        }
+
         const item = this.state.cart.find(i => i.productId === id);
+        const currentQtyInCart = item ? item.quantity : 0;
+        
+        if (currentQtyInCart + qty > maxStock) {
+            this.showToast(`Sepetinizde zaten ${currentQtyInCart} adet var. En fazla ${maxStock - currentQtyInCart} adet daha ekleyebilirsiniz.`, 'error');
+            return;
+        }
+
         if(item) {
             item.quantity += qty;
         } else {

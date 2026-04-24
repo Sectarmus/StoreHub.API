@@ -87,7 +87,7 @@ const app = {
         }
     },
 
-    navigate(view) {
+    navigate(view, data = null) {
         this.state.view = view;
         const main = document.getElementById('app-content');
         const template = document.getElementById(`view-${view}`);
@@ -107,6 +107,8 @@ const app = {
         } else if(view === 'admin-products') {
             this.populateCategoriesDropdown('admin-category');
             this.loadAdminProducts();
+        } else if(view === 'product-details') {
+            this.loadProductDetails(data);
         }
     },
 
@@ -170,12 +172,12 @@ const app = {
                     : `<div class="img-placeholder"><i class="fa-solid fa-image fa-3x"></i></div>`;
 
                 grid.innerHTML += `
-                    <div class="product-card glass-panel">
+                    <div class="product-card glass-panel" onclick="app.navigate('product-details', ${p.id})" style="cursor: pointer;">
                         ${imgHtml}
                         <h3>${p.name}</h3>
                         <p>${p.description}</p>
                         <div class="product-price">${p.price} TL</div>
-                        <button class="btn-primary add-btn" onclick="app.addToCart(${p.id}, '${p.name}', ${p.price})">
+                        <button class="btn-primary add-btn" onclick="event.stopPropagation(); app.addToCart(${p.id}, '${(p.name || '').replace(/'/g, "\\'")}', ${p.price})">
                             <i class="fa-solid fa-cart-plus"></i> Sepete Ekle
                         </button>
                     </div>
@@ -239,6 +241,68 @@ const app = {
         this.renderCart();
         this.showToast(`${name} sepete eklendi!`, 'success');
         this.updateCartCount();
+    },
+
+    addQuantityToCart(id, name, price) {
+        const qtyInput = document.getElementById('detail-qty');
+        const qty = parseInt(qtyInput.value) || 1;
+        
+        const item = this.state.cart.find(i => i.productId === id);
+        if(item) {
+            item.quantity += qty;
+        } else {
+            this.state.cart.push({ productId: id, name, price, quantity: qty });
+        }
+        this.saveCart();
+        this.renderCart();
+        this.showToast(`${qty} adet ${name} sepete eklendi!`, 'success');
+        this.updateCartCount();
+    },
+
+    async loadProductDetails(id) {
+        try {
+            const res = await fetch(`${API_URL}/Products/${id}`);
+            if (!res.ok) throw new Error('Ürün bulunamadı');
+            const p = await res.json();
+            
+            const container = document.getElementById('product-details-content');
+            
+            const imgSource = p.imageUrl 
+                ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
+                : null;
+            const imgHtml = imgSource 
+                ? `<img src="${imgSource}" alt="${p.name}">`
+                : `<div class="img-placeholder" style="height: 400px; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-image fa-5x"></i></div>`;
+
+            container.innerHTML = `
+                <div class="product-details-image">
+                    ${imgHtml}
+                </div>
+                <div class="product-details-info">
+                    <h1>${p.name}</h1>
+                    <div class="badge-admin" style="display:inline-block; width:fit-content; padding: 0.3rem 0.6rem;">${p.category || 'Genel Kategori'}</div>
+                    <div class="price">${p.price} TL</div>
+                    <div class="description">${p.description}</div>
+                    
+                    <div style="color: ${p.stock > 0 ? '#10b981' : '#ef4444'}; font-weight: bold; margin-top: 1rem; font-size: 1.1rem;">
+                        ${p.stock > 0 ? `<i class="fa-solid fa-check"></i> Stokta var (${p.stock} adet)` : '<i class="fa-solid fa-xmark"></i> Stokta yok'}
+                    </div>
+                    
+                    <div class="quantity-selector">
+                        <label style="font-size: 1.2rem; font-weight: 500;">Adet:</label>
+                        <input type="number" id="detail-qty" class="glass-input" value="1" min="1" max="${p.stock > 0 ? p.stock : 1}">
+                    </div>
+                    
+                    <button class="btn-primary" onclick="app.addQuantityToCart(${p.id}, '${(p.name || '').replace(/'/g, "\\'")}', ${p.price})" style="margin-top: 2rem; width: 100%; font-size: 1.2rem; padding: 1rem;" ${p.stock > 0 ? '' : 'disabled'}>
+                        <i class="fa-solid fa-cart-plus"></i> Sepete Ekle
+                    </button>
+                </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch(e) {
+            this.showToast('Ürün detayları yüklenemedi.', 'error');
+            this.navigate('home');
+        }
     },
 
     saveCart() {

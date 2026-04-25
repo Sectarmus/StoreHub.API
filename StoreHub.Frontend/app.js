@@ -100,6 +100,8 @@ const app = {
                 document.getElementById('welcome-name').textContent = this.state.user.username;
             }
             this.loadProducts();
+        } else if(view === 'auth') {
+            this.authMode = 'login';
         } else if(view === 'orders') {
             this.loadOrders();
         } else if(view === 'my-orders') {
@@ -429,6 +431,7 @@ const app = {
     toggleAuthMode() {
         this.authMode = this.authMode === 'login' ? 'register' : 'login';
         document.getElementById('auth-title').innerText = this.authMode === 'login' ? 'Giriş Yap' : 'Kayıt Ol';
+        document.getElementById('auth-submit').innerText = this.authMode === 'login' ? 'Giriş Yap' : 'Kayıt Ol';
         document.getElementById('auth-switch-text').innerText = this.authMode === 'login' ? 'Hesabın yok mu?' : 'Zaten hesabın var mı?';
         const switchTo = this.authMode === 'login' ? 'Kayıt Ol' : 'Giriş Yap';
         document.querySelector('.auth-switch a').innerText = switchTo;

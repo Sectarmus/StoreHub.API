@@ -114,6 +114,3 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 👨‍💻 Developed By
 **Alper (Sectarmus)**
-
----
-<p align="center">Made with ❤️ for modern e-commerce scalability.</p>

@@ -7,3 +7,4 @@ Obj/
 appsettings.Development.json
 *.user
 *.suo
+.env

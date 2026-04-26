@@ -136,3 +136,6 @@ C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\StoreHub.API.stati
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.AspNetCore.dll
 C:\Users\Alper\Desktop\backend\StoreHub.API\bin\Debug\net10.0\FluentValidation.DependencyInjectionExtensions.dll
+C:\Users\Alper\Desktop\backend\StoreHub.API\obj\Debug\net10.0\compressed\e00jq4px8h-{0}-qhclxjtbd1-qhclxjtbd1.gz
+C:\Users\Alper\Desktop\backend\StoreHub.API\obj\Debug\net10.0\compressed\j87narqzul-{0}-suu8698xbb-suu8698xbb.gz
+C:\Users\Alper\Desktop\backend\StoreHub.API\obj\Debug\net10.0\compressed\n7vayatau3-{0}-99cxid6kx7-99cxid6kx7.gz

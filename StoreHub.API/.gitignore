@@ -1,5 +1,7 @@
-[Aa]bin/
-[Aa]obj/
+bin/
+obj/
+Bin/
+Obj/
 [Vv]s/
 .vscode/
 appsettings.Development.json

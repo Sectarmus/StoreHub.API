@@ -1,21 +1,21 @@
 version: '3.8'
 
 services:
-  # Veritabanı
+  # 1. VERİTABANI (Siparişler ve Kullanıcılar burada saklanacak)
   db:
     image: postgres:15
     container_name: storehub-db-live
     restart: always
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: YourStrongPassword123!
+      POSTGRES_PASSWORD: YourStrongPassword123! # CANLIYA ALIRKEN BURAYI DEĞİŞTİRİN
       POSTGRES_DB: StoreHubDb
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Backend API
+  # 2. BACKEND API (.NET 10)
   api:
     build:
       context: ./StoreHub.API
@@ -24,6 +24,7 @@ services:
     restart: always
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+      # API'nin Docker içindeki DB konteynerine 'db' ismiyle ulaştığına dikkat edin!
       - ConnectionStrings__DefaultConnection=Host=db;Database=StoreHubDb;Username=postgres;Password=YourStrongPassword123!
     ports:
       - "8080:8080"

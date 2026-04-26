@@ -1,6 +1,6 @@
 using StoreHub.API.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Net.Http.Json;
+using System.Net.Http.Json; // JSON asistanımız
 using BCrypt.Net;
 
 namespace StoreHub.API.Data;

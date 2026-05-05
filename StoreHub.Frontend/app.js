@@ -1,4 +1,4 @@
-const API_URL = "https://storehub-alper.azurewebsites.net/api";
+const API_URL = "https://storehub-api.onrender.com/api";
 
 const app = {
     state: {
@@ -167,7 +167,7 @@ const app = {
                 // EĞER resim adresi 'http' ile başlıyorsa (Dışarıdan geliyorsa: DummyJSON) DİREKT KULLAN!
                 // Başlamıyorsa (İçeriden yüklenmişse) bizim Sunucu adresimizi (8080) başına ekle.
                 const imgSource = p.imageUrl 
-                    ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
+                    ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-api.onrender.com${p.imageUrl}`) 
                     : null;
                 const imgHtml = imgSource 
                     ? `<img src="${imgSource}" style="width:100%; height:180px; object-fit:cover; border-radius:8px; margin-bottom:1rem;">`
@@ -283,7 +283,7 @@ const app = {
             const container = document.getElementById('product-details-content');
             
             const imgSource = p.imageUrl 
-                ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
+                ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-api.onrender.com${p.imageUrl}`) 
                 : null;
             const imgHtml = imgSource 
                 ? `<img src="${imgSource}" alt="${p.name}">`
@@ -638,7 +638,7 @@ const app = {
 
             items.forEach(p => {
                 const imgSource = p.imageUrl 
-                    ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-alper.azurewebsites.net${p.imageUrl}`) 
+                    ? (p.imageUrl.startsWith('http') ? p.imageUrl : `https://storehub-api.onrender.com${p.imageUrl}`) 
                     : null;
 
                 const imgHtml = imgSource
@@ -704,7 +704,7 @@ const app = {
             document.getElementById('p-stock').value = product.stock;
             document.getElementById('p-category').value = product.category || '';
             if(product.imageUrl) {
-                document.getElementById('image-preview').innerHTML = `<img src="${product.imageUrl.startsWith('http') ? product.imageUrl : 'https://storehub-alper.azurewebsites.net' + product.imageUrl}">`;
+                document.getElementById('image-preview').innerHTML = `<img src="${product.imageUrl.startsWith('http') ? product.imageUrl : 'https://storehub-api.onrender.com' + product.imageUrl}">`;
             }
         } else {
             title.innerText = 'Yeni Ürün Ekle';
